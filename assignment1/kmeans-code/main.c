@@ -1,11 +1,23 @@
-#include "filestats.c" 
+// #include "filestats.c" 
 #include <stdlib.h>
 #include <string.h>
 #include <limits.h>
 #include <math.h>
+#include <stdio.h>
 
 #define LINELENGTH 3139
+#define MIN(X, Y) (((X) < (Y)) ? (X) : (Y))
+#define MAX(X,Y) ((X>Y)?X:Y)
 
+float max(float *arr, int len) {
+    float currentMax = 0; //in the mnist dataset the min # is 0    
+    for (int i = 0; i < len; i++) {
+        if ((arr[i] - currentMax) > 0.001) { // checking if the floating point # is larger 
+            currentMax = arr[i];
+        } 
+    }
+    return currentMax; 
+}
 typedef struct  {
     int ndata; // set to 0 
     int dim; // set to 0  
@@ -24,21 +36,25 @@ typedef struct  {
 
 
 KMData_t* kmdata_load(char *datafile) {
-    KMData_t *data = malloc(sizeof(KMData_t)); 
     
-    data->ndata = 0;  
-    data->dim = 0;
+    
+    FILE *f = fopen(datafile, "r");
+    if(f == NULL){
+        printf("Failed to open file\n");
+        return NULL; 
+    }
+
+    
     ssize_t tot_tokens = 0; //number of tokens in datafile 
     ssize_t tot_lines = 0;  // number of lines in datafile
 
     int fileStats = filestats(datafile, &tot_tokens, &tot_lines); 
     
-    FILE *f = fopen(datafile, "r");
-    if(f == NULL){
-        printf("Failed to open file");
-        return NULL; 
-    }
-    size_t currentRead; // current line of file we are reading 
+    KMData_t *data = malloc(sizeof(KMData_t)); 
+    data->ndata = 0;  
+    data->dim = 0;
+    data->features = malloc(sizeof(float) * (tot_tokens * tot_lines));  // mallocing 2d array for features array 
+    size_t currentRead = 0; // current line of file we are reading 
     char buffer[LINELENGTH]; 
     float tokens[tot_tokens]; 
     int currentLine = 0; 
@@ -54,33 +70,70 @@ KMData_t* kmdata_load(char *datafile) {
             }
             token = strtok(NULL, " "); 
         }
-        
+
         // appending features 
         float *feats = malloc(sizeof(float) * (tot_tokens - 2)); 
         for (int i = 2; i < tot_tokens; i++) {
             feats[i-2] = tokens[i]; // adding features to feature array 
         }
-        data->features = feats; 
+        data->features[currentLine*tot_tokens]= feats; // the features array is 2d and currentline will just be the index into that array 
         currentLine++; 
     }
     fclose(f); 
     return data; 
 }
 
-//not finished yet
-KMClust_t* kmclust_new(nclust, dim) {
+
+KMClust_t* kmclust_new(int nclust, int dim) {
     KMClust_t* clust = malloc(sizeof(KMClust_t)); 
     clust->nclust = nclust;
     clust->dim = dim;
-    // float* features = malloc();
-    // int* counts = malloc();
+    clust->features = malloc(sizeof(float)*nclust*dim); //mallocing enough space for 2d array 
+    clust->counts = malloc(sizeof(int) * nclust);
 
     
     for (int c = 0; c < nclust; c++){
-        
+        clust->features[c] = calloc(dim, sizeof(float)); 
+        clust->counts[c] = 0; 
     }
 
     return clust;
+}
+
+void save_pgm_files(KMClust_t *clust, char *savedir) {
+    int nclust = clust->nclust; 
+    int dim = clust->dim; 
+    int dim_root = (int) sqrt(dim); 
+    if (clust->dim % dim_root == 0) {
+        printf("Saving cluster centers to %p/cent_0000.pgm ...\n", savedir); 
+        
+        float maxClusterFeatures[nclust]; // we have nclust number of max features to compare 
+        float maxfeat = 0;  
+        for (int i = 0; i < nclust; i++) { //equivalent to the map in python finding the max 
+            maxClusterFeatures[i] = max(clust->features[i], dim); 
+        }
+        maxfeat = max(maxClusterFeatures, nclust); 
+        for (int c = 0; c < nclust; c++) {
+            char *outfile = strcat(strcat("Saving cluster centers to ", savedir), "/cent_0000.pgn ...\n");
+            FILE *pgm = fopen(outfile, "w"); 
+            char *p2 = strcat(strcat("P2", outfile), "\n");
+            fwrite(p2, strlen(p2), 1, pgm); 
+            char temp[100]; 
+            sprintf(temp, "%d %d\n", dim_root, dim_root);      
+            fwrite(temp, strlen(temp), 1, pgm);            
+            sprintf(temp, "%.0f\n", maxfeat); 
+            fwrite(temp, sizeof(temp), 1, pgm); 
+            for (int d = 0; d < dim; d++) {
+                if ((d > 0 && d%dim_root) == 0) {
+                    fwrite("\n", 1, 1, pgm); 
+                }
+                sprintf(temp, "%.3f\n", clust->features[c][d]); 
+                fwrite(temp, sizeof(temp), 1, pgm); 
+            }
+            fwrite("\n", 1, 1, pgm); 
+            fclose(pgm);
+        }  
+    }
 }
 
 
@@ -190,9 +243,9 @@ int main(int argc, char *argv[]) {
 
 
         // Print iteration information at the end of the iter
-        printf("%d: %d |", curiter, nchanges);
+        printf("%3d: %5d |", curiter, nchanges);
         for (int c = 0; c < nclust; c++){
-            printf(" %d", clust->counts);
+            printf(" %4d", clust->counts[c]);
         }
         printf("\n");
         curiter += 1;
@@ -204,14 +257,69 @@ int main(int argc, char *argv[]) {
     } else {
         printf("CONVERGED: after %d iterations", curiter);
     }
-    print("\n");
+    printf("\n");
 
     //=================================
     // CLEANUP + OUTPUT
 
     // CONFUSION MATRIX
-    // int confusion[data->nlabels][nclust];
-    for (int i = 0; i < data->nlabels; i++){
-        
+    int confusion[sizeof(data->nlabels)/sizeof(int)][nclust];
+    for (int i = 0; i < sizeof(data->nlabels)/sizeof(int); i++){
+        for (int j = 0; j < nclust; j++){
+            confusion[i][j] = 0;
+        }
     }
+
+    for (int i = 0; i < data->ndata; i++){
+        confusion[data->labels[i]][data->assigns[i]] += 1;
+    }
+
+    printf("==CONFUSION MATRIX + COUNTS==");
+    printf("LABEL \\ CLUST");
+
+    // confusion matrix header
+    printf("%2s", "");
+    for (int j = 0; j < clust->nclust; j++){
+        printf(" %4d", j);
+    }
+    printf(" %4s\n", "TOT");
+
+    int tot;
+
+    // each row of confusion matrix
+    for (int i = 0; i < data->nlabels; i++){
+        printf("%2d", i);
+        tot = 0;
+        for (int j = 0; j < clust->nclust; j++){
+            printf(" %4d", confusion[i][j]);
+            tot += confusion[i][j];
+        }
+        printf(" %4d\n", tot);
+    }
+
+
+    // final total row of confusion matrix
+    printf("TOT");
+    tot = 0;
+    for (int c = 0; c < clust->nclust; c++){
+        printf(" %4d", clust->counts[c]);
+        tot += clust->counts[c];
+    }
+    printf(" %4d\n\n", tot);
+
+
+    // LABEL FILE OUTPUT
+    char* outfile;
+    strcpy(outfile, savedir);
+    strcat(outfile, "/labels.txt");
+    printf("Saving cluster labels to file %s", outfile);
+
+    FILE* file = fopen(outfile, "w");
+    for (int i = 0; i < data->ndata; i++){
+        fprintf(file, "%2d %2d", data->labels[i], data->assigns[i]);
+    }
+    
+
+    // SAVE PGM FILES CONDITIONALLY
+    save_pgm_files(clust, savedir);
 }

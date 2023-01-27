@@ -1,4 +1,4 @@
-CFLAGS = -Wall -Werror -g
+CFLAGS = -Wall -Werror -g  -Wno-error -lm
 CC = gcc $(CFLAGS)
 SHELL = /bin/bash
 
