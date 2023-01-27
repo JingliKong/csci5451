@@ -1,0 +1,99 @@
+# Demo of running the python kmeans clustering on several provided
+# data files. The C version you construct should behave similarly.
+
+>> cd kmeans-code
+
+>> ls
+filestats.c  kmeans.py	sample-mnist-data
+
+>> chmod u+x kmeans.py
+
+>> ./kmeans.py
+usage: kmeans.py <datafile> <nclust> [savedir] [maxiter]
+
+>> ./kmeans.py sample-mnist-data/digits_all_1e2.txt 10 outdir
+datafile: sample-mnist-data/digits_all_1e2.txt
+nclust: 10
+savedir: outdir
+ndata: 100
+dim: 784
+
+==CLUSTERING: MAXITER 100==
+ITER NCHANGE CLUST_COUNTS
+  1:    35 |    9   14    9    7   10    6   15   10    8   12
+  2:    15 |    8   14    9    6    9    6   16   12    8   12
+  3:     8 |    8   15    9    6   10    4   16   15    8    9
+  4:     4 |    9   15    9    7   10    4   14   15    8    9
+  5:     2 |    9   14    9    7   10    4   14   16    8    9
+  6:     0 |    9   14    9    7   10    4   14   16    8    9
+CONVERGED: after 7 iterations
+
+==CONFUSION MATRIX + COUNTS==
+LABEL \ CLUST
+       0    1    2    3    4    5    6    7    8    9  TOT
+ 0:    0    1    0    4    0    1    0    0    2    0    8
+ 1:    0    0    0    0    9    0    0    5    0    0   14
+ 2:    0    3    1    0    0    1    0    3    0    0    8
+ 3:    4    0    1    0    1    0    0    0    5    0   11
+ 4:    0    0    3    1    0    1    8    1    0    0   14
+ 5:    0    0    1    2    0    1    0    2    1    0    7
+ 6:    0    9    1    0    0    0    0    0    0    0   10
+ 7:    5    0    0    0    0    0    3    3    0    4   15
+ 8:    0    1    0    0    0    0    0    1    0    0    2
+ 9:    0    0    2    0    0    0    3    1    0    5   11
+TOT    9   14    9    7   10    4   14   16    8    9  100
+
+Saving cluster labels to file outdir/labels.txt
+Saving cluster centers to outdir/cent_0000.pgm ...
+>> ls outdir/
+cent_0000.pgm  cent_0002.pgm  cent_0004.pgm  cent_0006.pgm  cent_0008.pgm  labels.txt
+cent_0001.pgm  cent_0003.pgm  cent_0005.pgm  cent_0007.pgm  cent_0009.pgm
+>> ./kmeans.py sample-mnist-data/digits_1x9_2e3.txt 4 two-nine-dir
+datafile: sample-mnist-data/digits_1x9_2e3.txt
+nclust: 4
+savedir: two-nine-dir
+ndata: 2000
+dim: 784
+
+==CLUSTERING: MAXITER 100==
+ITER NCHANGE CLUST_COUNTS
+  1:  1398 |  530  393  548  529
+  2:   591 |  734  359  369  538
+  3:   180 |  738  397  294  571
+  4:   119 |  674  423  322  581
+  5:    86 |  612  435  379  574
+  6:    68 |  563  444  423  570
+  7:    54 |  522  451  462  565
+  8:    33 |  501  456  480  563
+  9:    17 |  488  458  490  564
+ 10:     8 |  481  459  496  564
+ 11:     5 |  476  459  501  564
+ 12:     5 |  471  459  506  564
+ 13:     4 |  468  460  508  564
+ 14:     5 |  464  461  511  564
+ 15:     5 |  461  462  514  563
+ 16:     2 |  460  463  514  563
+ 17:     1 |  459  463  515  563
+ 18:     1 |  458  463  516  563
+ 19:     0 |  458  463  516  563
+CONVERGED: after 20 iterations
+
+==CONFUSION MATRIX + COUNTS==
+LABEL \ CLUST
+       0    1    2    3  TOT
+ 0:    0    0    0    0    0
+ 1:    1  450    1  548 1000
+ 2:    0    0    0    0    0
+ 3:    0    0    0    0    0
+ 4:    0    0    0    0    0
+ 5:    0    0    0    0    0
+ 6:    0    0    0    0    0
+ 7:    0    0    0    0    0
+ 8:    0    0    0    0    0
+ 9:  457   13  515   15 1000
+TOT  458  463  516  563 2000
+
+Saving cluster labels to file two-nine-dir/labels.txt
+Saving cluster centers to two-nine-dir/cent_0000.pgm ...
+>> ls two-nine-dir/
+cent_0000.pgm  cent_0001.pgm  cent_0002.pgm  cent_0003.pgm  labels.txt
