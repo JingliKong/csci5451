@@ -46,18 +46,22 @@ KMData_t* kmdata_load(char *datafile) {
     while (currentLine < tot_lines) {
         data->ndata += 1; 
         currentRead = fread(buffer, 1, LINELENGTH, f); 
-        for (int i = 0; i < LINELENGTH; i++) {
-            if (isspace(buffer[i]) == 0) { // if the current character is not a white space 
-                tokens[tokenIndex] = atof(buffer[i]); // add character to our tokens list
+        char *token = strtok(buffer, " "); 
+        while (token != NULL) {
+            if (isspace(token) == 0) { // if the current character is not a white space 
+                tokens[tokenIndex] = atof(token); 
+                tokenIndex++; 
             }
+            token = strtok(NULL, " "); 
         }
+        
         // appending features 
         float *feats = malloc(sizeof(float) * (tot_tokens - 2)); 
         for (int i = 2; i < tot_tokens; i++) {
             feats[i-2] = tokens[i]; // adding features to feature array 
         }
         data->features = feats; 
-        currentRead++; 
+        currentLine++; 
     }
     fclose(f); 
     return data; 
@@ -206,4 +210,8 @@ int main(int argc, char *argv[]) {
     // CLEANUP + OUTPUT
 
     // CONFUSION MATRIX
+    // int confusion[data->nlabels][nclust];
+    for (int i = 0; i < data->nlabels; i++){
+        
+    }
 }
