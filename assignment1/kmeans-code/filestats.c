@@ -10,7 +10,7 @@ int filestats(char *filename, ssize_t *tot_tokens, ssize_t *tot_lines){
 // success.
 //
 // EXAMPLE: int ret = filestats("digits_all_1e1.txt", &toks, &lines);
-// toks  is now 7860 : 10 lines with 786 tokens per line, label + ":" + 28x28 pixels
+// toks  is now 786 : 10 lines with 786 tokens per line, label + ":" + 28x28 pixels
 // lines is now 10   : there are 10 lines in the file
   FILE *fin = fopen(filename,"r");
   if(fin == NULL){
