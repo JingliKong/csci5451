@@ -21,6 +21,16 @@ float max(float *arr, int len) {
     }
     return currentMax; 
 }
+int maxInt(int *arr, int len) {
+    float currentMax = 0; //in the mnist dataset the min # is 0    
+    for (int i = 0; i < len; i++) {
+        if (arr[i] > currentMax) { // checking if the floating point # is larger 
+            currentMax = arr[i];
+        } 
+    }
+    return currentMax; 
+}
+
 typedef struct  {
     int ndata; // set to 0 
     int dim; // set to 0  
@@ -39,15 +49,11 @@ typedef struct  {
 
 
 KMData_t* kmdata_load(char *datafile) {
-    
-    
     FILE *f = fopen(datafile, "r");
     if(f == NULL){
         printf("Failed to open file\n");
         return NULL; 
     }
-
-    
     ssize_t tot_tokens = 0; //number of tokens in datafile 
     ssize_t tot_lines = 0;  // number of lines in datafile
 
@@ -57,12 +63,13 @@ KMData_t* kmdata_load(char *datafile) {
     data->ndata = 0;  
     data->dim = 0;
     data->features = malloc(sizeof(float) * (tot_tokens * tot_lines));  // mallocing 2d array for features array 
+    data->labels = malloc(sizeof(int) * tot_lines); //allocating space for data labels 
     size_t currentRead = 0; // current line of file we are reading 
     char buffer[LINELENGTH]; 
     float tokens[tot_tokens]; 
-    int currentLine = 0; 
+    
     int tokenIndex = 0; 
-    while (currentLine < tot_lines) {
+    for (int i = 0; i < tot_lines; i++) {
         data->ndata += 1; 
         currentRead = fread(buffer, 1, LINELENGTH, f); 
         char *token = strtok(buffer, " "); 
@@ -73,16 +80,17 @@ KMData_t* kmdata_load(char *datafile) {
             }
             token = strtok(NULL, " "); 
         }
-
+        data->labels[i] = (int) tokens[0]; 
         // appending features 
         float *feats = malloc(sizeof(float) * (tot_tokens - 2)); 
         for (int i = 2; i < tot_tokens; i++) {
             feats[i-2] = tokens[i]; // adding features to feature array 
         }
-        data->features[currentLine*tot_tokens]= feats; // the features array is 2d and currentline will just be the index into that array 
-        currentLine++; 
+        data->features[i] = feats; // the features array is 2d and currentline will just be the index into that array 
     }
     fclose(f); 
+    data->dim = sizeof(data->features[0])/sizeof(float); 
+    data->nlabels = maxInt(data->labels, tot_lines) + 1;
     return data; 
 }
 
@@ -145,14 +153,14 @@ int main(int argc, char *argv[]) {
         exit(-1);
     }
 
-    char* datafile;
+    char* datafile[100];
     int nclust;
-    char* savedir = ".";
+    char* savedir[7];
     int MAXITER = 100;
     
     strcpy(datafile, argv[1]);
     nclust = atoi(argv[2]);
-
+    // printf("Length of file: %d\n", argv[1]);
     if (argc > 3){
         strcpy(savedir, argv[3]);
         mkdir(savedir);
@@ -171,6 +179,8 @@ int main(int argc, char *argv[]) {
     
     printf("ndata: %d\n", data->ndata);
     printf("dim: %d\n\n", data->dim);
+
+    data->assigns = malloc(sizeof(int) * data->ndata); // allocating space for the integer array
 
     for (int i = 0; i < data->ndata; i++){
         int c = i % clust->nclust;
@@ -272,7 +282,7 @@ int main(int argc, char *argv[]) {
             confusion[i][j] = 0;
         }
     }
-
+    
     for (int i = 0; i < data->ndata; i++){
         confusion[data->labels[i]][data->assigns[i]] += 1;
     }
