@@ -13,7 +13,7 @@
 #define MAX(X,Y) ((X>Y)?X:Y)
 
 float max(float *arr, int len) {
-    float currentMax = 0; //in the mnist dataset the min # is 0    
+    float currentMax = -INFINITY; //in the mnist dataset the min # is 0    
     for (int i = 0; i < len; i++) {
         if ((arr[i] - currentMax) > 0.001) { // checking if the floating point # is larger 
             currentMax = arr[i];
@@ -21,8 +21,9 @@ float max(float *arr, int len) {
     }
     return currentMax; 
 }
+
 int maxInt(int *arr, int len) {
-    float currentMax = 0; //in the mnist dataset the min # is 0    
+    int currentMax = INT_MIN; //in the mnist dataset the min # is 0    
     for (int i = 0; i < len; i++) {
         if (arr[i] > currentMax) { // checking if the floating point # is larger 
             currentMax = arr[i];
@@ -37,7 +38,7 @@ typedef struct  {
     float **features;
     int *assigns;
     int *labels;  
-    int *nlabels;                    
+    int nlabels;                    
 } KMData_t;
 
 typedef struct  {
@@ -62,7 +63,7 @@ KMData_t* kmdata_load(char *datafile) {
     KMData_t *data = malloc(sizeof(KMData_t)); 
     data->ndata = 0;  
     data->dim = 0;
-    data->features = malloc(sizeof(float) * (tot_tokens * tot_lines));  // mallocing 2d array for features array 
+    data->features = malloc(sizeof(float*) * tot_lines);  // mallocing 2d array for features array 
     data->labels = malloc(sizeof(int) * tot_lines); //allocating space for data labels 
     size_t currentRead = 0; // current line of file we are reading 
     char buffer[LINELENGTH]; 
@@ -125,7 +126,11 @@ void save_pgm_files(KMClust_t *clust, char *savedir) {
         }
         maxfeat = max(maxClusterFeatures, nclust); 
         for (int c = 0; c < nclust; c++) {
-            char *outfile = strcat(strcat("Saving cluster centers to ", savedir), "/cent_0000.pgn ...\n");
+            char *msg; 
+            sprintf(msg, "Saving cluster centers to %s /cent_0000.pgn ...\n", savedir); 
+            printf(msg); 
+            char *outfile; 
+            sprintf(outfile, "%s/cent%.04d.pgm", savedir, c);
             FILE *pgm = fopen(outfile, "w"); 
             char *p2 = strcat(strcat("P2", outfile), "\n");
             fwrite(p2, strlen(p2), 1, pgm); 
@@ -300,6 +305,7 @@ int main(int argc, char *argv[]) {
     int tot;
 
     // each row of confusion matrix
+    printf("nlabels: %d\n", data->nlabels);
     for (int i = 0; i < data->nlabels; i++){
         printf("%2d", i);
         tot = 0;
