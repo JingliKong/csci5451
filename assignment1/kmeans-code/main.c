@@ -1,4 +1,7 @@
 // #include "filestats.c" 
+// Compile: gcc -g main.c filestats.c -o kmeans -lm
+// Running: ./kmeans sample-mnist-data/digits_all_1e2.txt 10 outdir
+// gdb --args kmeans sample-mnist-data/digits_all_1e2.txt 10 outdir
 #include <stdlib.h>
 #include <string.h>
 #include <limits.h>

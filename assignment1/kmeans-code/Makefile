@@ -1,4 +1,4 @@
-CFLAGS = -Wall -Werror -g  -Wno-error -lm
+CFLAGS = -Wall -Werror -g -Wno-error -lm
 CC = gcc $(CFLAGS)
 SHELL = /bin/bash
 
@@ -19,7 +19,7 @@ filestats.o: filestats.c
 	$(CC) -c filestats.c
 
 main.o: main.c filestats.c
-	$(CC) -c main.c
+	$(CC) -c main.c 
 
 main: main.o filestats.o
 	$(CC) -o main main.o filestats.o
