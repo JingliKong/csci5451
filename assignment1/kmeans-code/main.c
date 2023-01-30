@@ -119,7 +119,7 @@ KMData* kmdata_load(char* datafile) {
     data->labels = (int *) calloc(tot_lines, sizeof(int) * tot_lines); // just the pointers we need 
     // allocating space for all the features arrays 
     data->features = (double*) malloc(tot_tokens/tot_lines * sizeof(double*));
-    char line[3139]; //each line of a file is 3130 bytes long I think  
+    char line[3139]; //each line of a file is 3139 bytes long I think  
     int labelIdx = 0; 
     int featureIdx = 0; 
     int lenFeatures0 = 0;  
@@ -138,14 +138,15 @@ KMData* kmdata_load(char* datafile) {
         int i = 0;
         tokens = strtok(NULL, " "); // starting to tokenize past the : note the 3 spaces 
         while (tokens != NULL) {
+            if (i == 0) { // if we are in a new row in the file we increment the num of features we have 
+                lenFeatures0++; 
+            }
+
             if (isspace(tokens) == 0) {
                 data->features[featureIdx][i] = atof(tokens);   
                 i++; 
             }
             tokens = strtok(NULL, " ");
-            if (i == 0) { // if we are in a new row in the file we increment the num of features we have 
-                lenFeatures0++; 
-            }
         }
         i = 0; 
         featureIdx++; //these are the same 
@@ -201,7 +202,7 @@ KMClust* kmclust_new(int nclust, int dim) {
     }
     return clust;
 }
-void save_pgm_files(KMClust *clust, char *savedir) {
+void save_pgm_files(KMClust* clust, char* savedir) {
     int nclust = clust->nclust; 
     int dim = clust->dim; 
     int dim_root = (int) sqrt(dim); 
@@ -243,7 +244,7 @@ int main(int argc, char **argv) {
     }
     char* datafile = argv[1]; 
     int nclust = atoi(argv[2]);
-    char *savedir = malloc(100); //for now we are just going to allocate 100 bytes for the savedir name  
+    char *savedir = malloc(100*sizeof(char)); //for now we are just going to allocate 100 bytes for the savedir name  
     int MAXITER = 100; 
 
     if (argc > 3) {
@@ -421,4 +422,6 @@ int main(int argc, char **argv) {
 
     // SAVE PGM FILES CONDITIONALLY
     save_pgm_files(clust, savedir);
+
+    free(savedir);
 } 
