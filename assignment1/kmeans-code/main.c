@@ -58,14 +58,14 @@ int filestats(char *filename, ssize_t *tot_tokens, ssize_t *tot_lines){
 typedef struct KMClust {
     int nclust;   // number of clusters, the "k" in kmeans
     int dim;      // dimension of features for data
-    double** features; // 2D indexing for individual cluster center features
+    float** features; // 2D indexing for individual cluster center features
     int* counts;
 } KMClust;
 
 typedef struct KMData {
     int ndata;    // count of data
     int dim;      // dimension of features for data
-    double** features; // pointers to individual features
+    float** features; // pointers to individual features
     int* assigns; // cluster to which data is assigned
     int* labels;  // label for data if available
     int nlabels;  // max value of labels +1, number 0,1,...,nlabel0
@@ -88,6 +88,16 @@ int intMax (int *arr, int len) {
         }
     }
     return current_min; 
+}
+
+float floatMax(float *arr, int len) {
+    float currentMax = -INFINITY; //in the mnist dataset the min # is 0    
+    for (int i = 0; i < len; i++) {
+        if ((arr[i] - currentMax) > 0.001) { // checking if the floating point # is larger 
+            currentMax = arr[i];
+        } 
+    }
+    return currentMax; 
 }
 
 
@@ -149,19 +159,10 @@ KMClust* kmclust_new(int nclust, int dim) {
     memset(clust, 0, sizeof(KMClust)); // zeroing out all data 
     clust->nclust = nclust;
     clust->dim = dim;
-    // clust->features = (float *) malloc(sizeof(float)*nclust*dim); //mallocing enough space for 2d array 
-    // clust->counts = (int *) malloc(sizeof(int *) * nclust);
 
     clust->features = malloc2dFloatArray(nclust, dim); 
     clust->counts = malloc(sizeof(int) * nclust); 
   
-    // memset(clust->features, 0, sizeof(float)*nclust*dim);
-    // memset(clust->counts, 0, sizeof(int) * nclust); 
-   
-    // for (int c = 0; c < nclust; c++){
-    //     clust->features[c] = calloc((size_t) dim, sizeof(float)); 
-    //     // clust->counts[c] = calloc(1, sizeof(int)); 
-    // }
     for (int c = 0; c < nclust; c++) {
         for (int d = 0; d < dim; d++) {
             clust->features[c][d] = 0.0; 
@@ -170,7 +171,45 @@ KMClust* kmclust_new(int nclust, int dim) {
     }
     return clust;
 }
-
+void save_pgm_files(KMClust *clust, char *savedir) {
+    int nclust = clust->nclust; 
+    int dim = clust->dim; 
+    int dim_root = (int) sqrt(dim); 
+    if (clust->dim % dim_root == 0) {
+        printf("Saving cluster centers to %p/cent_0000.pgm ...\n", savedir); 
+        
+        float maxClusterFeatures[nclust]; // we have nclust number of max features to compare 
+        float maxfeat = 0;  
+        for (int i = 0; i < nclust; i++) { //equivalent to the map in python finding the max 
+            maxClusterFeatures[i] = floatMax(clust->features[i], dim); 
+        }
+        maxfeat = floatMax(maxClusterFeatures, nclust); 
+        for (int c = 0; c < nclust; c++) {
+            char *msg; 
+            sprintf(msg, "Saving cluster centers to %s /cent_0000.pgn ...\n", savedir); 
+            printf(msg); 
+            char *outfile; 
+            sprintf(outfile, "%s/cent%.04d.pgm", savedir, c);
+            FILE *pgm = fopen(outfile, "w"); 
+            char *p2 = strcat(strcat("P2", outfile), "\n");
+            fwrite(p2, strlen(p2), 1, pgm); 
+            char temp[100]; 
+            sprintf(temp, "%d %d\n", dim_root, dim_root);      
+            fwrite(temp, strlen(temp), 1, pgm);            
+            sprintf(temp, "%.0f\n", maxfeat); 
+            fwrite(temp, sizeof(temp), 1, pgm); 
+            for (int d = 0; d < dim; d++) {
+                if ((d > 0 && d%dim_root) == 0) {
+                    fwrite("\n", 1, 1, pgm); 
+                }
+                sprintf(temp, "%.3f\n", clust->features[c][d]); 
+                fwrite(temp, sizeof(temp), 1, pgm); 
+            }
+            fwrite("\n", 1, 1, pgm); 
+            fclose(pgm);
+        }  
+    }
+}
 int main(int argc, char **argv) {
     if (argc < 3) {
         exit(-1); 
@@ -339,9 +378,12 @@ int main(int argc, char **argv) {
 
 
     // LABEL FILE OUTPUT
-    char* outfile[100];
-    strcpy(outfile, savedir);
-    strcat(outfile, "/labels.txt");
+    // char* outfile;
+    // strcpy(outfile, savedir);
+    // strcat(outfile, "/labels.txt");
+
+    char *outfile[50]; 
+    sprintf(outfile, "%s/labels.txt", savedir); 
     printf("Saving cluster labels to file %s", outfile);
 
     FILE* file = fopen(outfile, "w");
@@ -349,5 +391,7 @@ int main(int argc, char **argv) {
         fprintf(file, "%2d %2d", data->labels[i], data->assigns[i]);
     }
     fclose(file); 
-    
+
+    // SAVE PGM FILES CONDITIONALLY
+    save_pgm_files(clust, savedir);
 } 
