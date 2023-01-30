@@ -185,14 +185,11 @@ void save_pgm_files(KMClust *clust, char *savedir) {
         }
         maxfeat = floatMax(maxClusterFeatures, nclust); 
         for (int c = 0; c < nclust; c++) {
-            char *msg; 
-            sprintf(msg, "Saving cluster centers to %s /cent_0000.pgn ...\n", savedir); 
-            printf(msg); 
-            char *outfile; 
-            sprintf(outfile, "%s/cent%.04d.pgm", savedir, c);
-            FILE *pgm = fopen(outfile, "w"); 
-            char *p2 = strcat(strcat("P2", outfile), "\n");
-            fwrite(p2, strlen(p2), 1, pgm); 
+            char outfile[100]; 
+            sprintf(outfile, "%s/cent%.04d.pgm\0", savedir, c);
+            FILE *pgm = fopen(outfile, "w+"); 
+            // char *p2 = strcat(strcat("P2", outfile), "\n");
+            fwrite("P2\n", 3, 1, pgm); 
             char temp[100]; 
             sprintf(temp, "%d %d\n", dim_root, dim_root);      
             fwrite(temp, strlen(temp), 1, pgm);            
@@ -342,20 +339,20 @@ int main(int argc, char **argv) {
         confusion[data->labels[i]][data->assigns[i]] += 1;
     }
 
-    printf("==CONFUSION MATRIX + COUNTS==");
+    printf("==CONFUSION MATRIX + COUNTS==\n");
     printf("LABEL \\ CLUST");
 
     // confusion matrix header
-    printf("%2s", "");
+    printf("%2s\n", "");
     for (int j = 0; j < clust->nclust; j++){
         printf(" %4d", j);
     }
     printf(" %4s\n", "TOT");
 
-    int tot;
+    int tot = 0;
 
     // each row of confusion matrix
-    printf("nlabels: %d\n", data->nlabels);
+    // printf("nlabels: %d\n", data->nlabels);
     for (int i = 0; i < data->nlabels; i++){
         printf("%2d", i);
         tot = 0;
