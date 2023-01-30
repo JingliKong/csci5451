@@ -2,7 +2,7 @@
 // Running: ./kmeans sample-mnist-data/digits_all_1e2.txt 10 outdir
 // gdb -tui --args kmeans sample-mnist-data/digits_all_1e2.txt 10 outdir  
 // Compile: gcc -g main.c -o kmeans -lm
-
+// mine: ./kmeans sample-mnist-data/test.txt 3 outdir
 // running python ./kmeans.py sample-mnist-data/digits_all_1e2.txt 10 outdir
 #include <stdlib.h>
 #include <string.h>
@@ -112,38 +112,43 @@ KMData* kmdata_load(char* datafile) {
     }
     ssize_t tot_tokens = 0; //number of tokens in datafile 
     ssize_t tot_lines = 0;  // number of lines in datafile
+
     // Getting file data we need to allocate correct amount of space 
     int fileStats = filestats(datafile, &tot_tokens, &tot_lines); 
     // allocating space for the number of labels in the dataset 
     data->labels = (int *) calloc(tot_lines, sizeof(int) * tot_lines); // just the pointers we need 
     // allocating space for all the features arrays 
     data->features = (double*) malloc(tot_tokens/tot_lines * sizeof(double*));
-    char line[100000]; //each line of a file is 3130 bytes long I think  
+    char line[3139]; //each line of a file is 3130 bytes long I think  
     int labelIdx = 0; 
     int featureIdx = 0; 
     int lenFeatures0 = 0;  
+   
     while (fgets(line, sizeof(line), fin) != NULL) {
         data->ndata++;
         char* tokens = strtok(line, " "); //Grabbing the label e.g. 7 
         data->labels[labelIdx] = atoi(tokens); //adding num to arr of labels 
         
         tokens = strtok(NULL, " "); // grabbing the : token out 
-        
         // allocating features array 
         // we get the current feature array size by taking tot_tokens/tot_lines
         // data->features[featureIdx] = (double*)calloc(tot_tokens/tot_lines, sizeof(double*)); //currently segfaults here 
         // allocating enough space for the feature array which contains doubles  
-        data->features[featureIdx] = (double *) calloc (tot_tokens/tot_lines, sizeof(double)); 
+        data->features[featureIdx] = (float *) calloc (tot_tokens/tot_lines, sizeof(float)); 
         int i = 0;
-        tokens = strtok(NULL, "   "); // starting to tokenize past the : note the 3 spaces 
+        tokens = strtok(NULL, " "); // starting to tokenize past the : note the 3 spaces 
         while (tokens != NULL) {
-            data->features[featureIdx][i] = atof(tokens);
-            tokens = strtok(NULL, "  ");
-            if (featureIdx == 0) {
+            if (isspace(tokens) == 0) {
+                data->features[featureIdx][i] = atof(tokens);   
+                i++; 
+            }
+            tokens = strtok(NULL, " ");
+            if (i == 0) { // if we are in a new row in the file we increment the num of features we have 
                 lenFeatures0++; 
             }
         }
-        featureIdx++; 
+        i = 0; 
+        featureIdx++; //these are the same 
         labelIdx++; 
     }
     data->dim = lenFeatures0;  
@@ -153,6 +158,31 @@ KMData* kmdata_load(char* datafile) {
     fclose(fin);
     return data;
 }
+
+ // while (fscanf(fin, "%s", line) != EOF) {
+    //     data->ndata++;
+    //     char* tokens = strtok(line, " "); //Grabbing the label e.g. 7 
+    //     data->labels[labelIdx] = atoi(tokens); //adding num to arr of labels 
+        
+    //     tokens = strtok(NULL, " "); // grabbing the : token out 
+        
+    //     // allocating features array 
+    //     // we get the current feature array size by taking tot_tokens/tot_lines
+    //     // data->features[featureIdx] = (double*)calloc(tot_tokens/tot_lines, sizeof(double*)); //currently segfaults here 
+    //     // allocating enough space for the feature array which contains doubles  
+    //     data->features[featureIdx] = (float *) calloc (tot_tokens/tot_lines, sizeof(double)); 
+    //     int i = 0;
+    //     tokens = strtok(NULL, "   "); // starting to tokenize past the : note the 3 spaces 
+    //     while (tokens != NULL) {
+    //         data->features[featureIdx][i] = atof(tokens);
+    //         tokens = strtok(NULL, "  ");
+    //         if (featureIdx == 0) {
+    //             lenFeatures0++; 
+    //         }
+    //     }
+    //     featureIdx++; 
+    //     labelIdx++; 
+    // }
 
 KMClust* kmclust_new(int nclust, int dim) {
     KMClust* clust = malloc(sizeof(KMClust)); 
