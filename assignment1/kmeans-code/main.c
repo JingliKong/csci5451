@@ -362,7 +362,7 @@ int main(int argc, char **argv) {
     // each row of confusion matrix
     // printf("nlabels: %d\n", data->nlabels);
     for (int i = 0; i < data->nlabels; i++){
-        printf("%2d", i);
+        printf("%2d:", i);
         tot = 0;
         for (int j = 0; j < clust->nclust; j++){
             printf(" %4d", confusion[i][j]);
