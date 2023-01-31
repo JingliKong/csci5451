@@ -1,9 +1,9 @@
-// Compile: gcc -g main.c filestats.c -o kmeans -lm
-// Running: ./kmeans sample-mnist-data/digits_all_1e2.txt 10 outdir
+// Running: f
 // gdb -tui --args kmeans sample-mnist-data/digits_all_1e2.txt 10 outdir  
 // Compile: gcc -g main.c -o kmeans -lm
 // mine: ./kmeans sample-mnist-data/test.txt 3 outdir
-// running python ./kmeans.py sample-mnist-data/digits_all_1e2.txt 10 outdir
+// running python: ./kmeans.py sample-mnist-data/digits_all_1e2.txt 10 outdir
+// gdb -tui --args kmeans sample-mnist-data/test.txt 3 outdir 
 #include <stdlib.h>
 #include <string.h>
 #include <limits.h>
@@ -116,74 +116,34 @@ KMData* kmdata_load(char* datafile) {
     // Getting file data we need to allocate correct amount of space 
     int fileStats = filestats(datafile, &tot_tokens, &tot_lines); 
     // allocating space for the number of labels in the dataset 
-    data->labels = (int *) calloc(tot_lines, sizeof(int) * tot_lines); // just the pointers we need 
+    data->labels = (int *) calloc(tot_lines, sizeof(int) * tot_lines); 
+    //length of features array 
+    int featuresLength = tot_tokens/tot_lines - 2; 
     // allocating space for all the features arrays 
-    data->features = (double*) malloc(tot_tokens/tot_lines * sizeof(double*));
-    char line[3139]; //each line of a file is 3139 bytes long I think  
-    int labelIdx = 0; 
-    int featureIdx = 0; 
-    int lenFeatures0 = 0;  
-   
-    while (fgets(line, sizeof(line), fin) != NULL) {
-        data->ndata++;
-        char* tokens = strtok(line, " "); //Grabbing the label e.g. 7 
-        data->labels[labelIdx] = atoi(tokens); //adding num to arr of labels 
-        
-        tokens = strtok(NULL, " "); // grabbing the : token out 
-        // allocating features array 
-        // we get the current feature array size by taking tot_tokens/tot_lines
-        // data->features[featureIdx] = (double*)calloc(tot_tokens/tot_lines, sizeof(double*)); //currently segfaults here 
-        // allocating enough space for the feature array which contains doubles  
-        data->features[featureIdx] = (float *) calloc (tot_tokens/tot_lines, sizeof(float)); 
-        int i = 0;
-        tokens = strtok(NULL, " "); // starting to tokenize past the : note the 3 spaces 
-        while (tokens != NULL) {
-            if (i == 0) { // if we are in a new row in the file we increment the num of features we have 
-                lenFeatures0++; 
-            }
+    data->features = malloc2dFloatArray(tot_lines, tot_tokens/tot_lines); // allocating a 2d array for the features 
 
-            if (isspace(tokens) == 0) {
-                data->features[featureIdx][i] = atof(tokens);   
-                i++; 
-            }
-            tokens = strtok(NULL, " ");
+    int ndata = 0; // keeping track of ndata 
+    int currentIntToken = 0; // used to store the current feature token 
+    char colon[1]; 
+    for (int i = 0; i < tot_lines; i++) {
+        ndata++; 
+        fscanf (fin, "%d %s", &currentIntToken, &colon);
+        data->labels[i] = currentIntToken; // appending label to labels array 
+        for (int j = 0; j < featuresLength; j++) {
+            fscanf(fin, "%d", &currentIntToken);
+            data->features[i][j] = currentIntToken; // appending feature to feature array   
         }
-        i = 0; 
-        featureIdx++; //these are the same 
-        labelIdx++; 
     }
-    data->dim = lenFeatures0;  
-    data->nlabels = intMax(data->labels, labelIdx) + 1; // note since I increment the labelIdx when I add a new label this should be the length
-    data->assigns = malloc(sizeof(int) * data->ndata); //allocating assigns array for later 
-    memset(data->assigns, 0, sizeof(int) * data->ndata); 
     fclose(fin);
+    data->ndata = ndata; 
+    data->dim = featuresLength; 
+    data->nlabels = intMax(data->labels, featuresLength) + 1; // note since I increment the labelIdx when I add a new label this should be the length
+    data->assigns = malloc(sizeof(int) * data->ndata); //allocating assigns array for later 
+    memset(data->assigns, 0, sizeof(int) * data->ndata); //zerioing out assigns for now 
+    
     return data;
 }
 
- // while (fscanf(fin, "%s", line) != EOF) {
-    //     data->ndata++;
-    //     char* tokens = strtok(line, " "); //Grabbing the label e.g. 7 
-    //     data->labels[labelIdx] = atoi(tokens); //adding num to arr of labels 
-        
-    //     tokens = strtok(NULL, " "); // grabbing the : token out 
-        
-    //     // allocating features array 
-    //     // we get the current feature array size by taking tot_tokens/tot_lines
-    //     // data->features[featureIdx] = (double*)calloc(tot_tokens/tot_lines, sizeof(double*)); //currently segfaults here 
-    //     // allocating enough space for the feature array which contains doubles  
-    //     data->features[featureIdx] = (float *) calloc (tot_tokens/tot_lines, sizeof(double)); 
-    //     int i = 0;
-    //     tokens = strtok(NULL, "   "); // starting to tokenize past the : note the 3 spaces 
-    //     while (tokens != NULL) {
-    //         data->features[featureIdx][i] = atof(tokens);
-    //         tokens = strtok(NULL, "  ");
-    //         if (featureIdx == 0) {
-    //             lenFeatures0++; 
-    //         }
-    //     }
-    //     featureIdx++; 
-    //     labelIdx++; 
-    // }
 
 KMClust* kmclust_new(int nclust, int dim) {
     KMClust* clust = malloc(sizeof(KMClust)); 
@@ -244,7 +204,8 @@ int main(int argc, char **argv) {
     }
     char* datafile = argv[1]; 
     int nclust = atoi(argv[2]);
-    char *savedir = malloc(100*sizeof(char)); //for now we are just going to allocate 100 bytes for the savedir name  
+    // char *savedir = malloc(100*sizeof(char)); //for now we are just going to allocate 100 bytes for the savedir name  
+    char savedir[100]; 
     int MAXITER = 100; 
 
     if (argc > 3) {
@@ -359,8 +320,8 @@ int main(int argc, char **argv) {
     // CLEANUP + OUTPUT
 
     // CONFUSION MATRIX
-    int confusion[sizeof(data->nlabels)/sizeof(int)][nclust];
-    for (int i = 0; i < sizeof(data->nlabels)/sizeof(int); i++){
+    int confusion[data->nlabels][nclust]; // am I initializing this right? 
+    for (int i = 0; i < data->nlabels i++){
         for (int j = 0; j < nclust; j++){
             confusion[i][j] = 0;
         }
@@ -410,7 +371,7 @@ int main(int argc, char **argv) {
     // strcpy(outfile, savedir);
     // strcat(outfile, "/labels.txt");
 
-    char *outfile[50]; 
+    char outfile[50]; 
     sprintf(outfile, "%s/labels.txt", savedir); 
     printf("Saving cluster labels to file %s", outfile);
 
@@ -423,5 +384,5 @@ int main(int argc, char **argv) {
     // SAVE PGM FILES CONDITIONALLY
     save_pgm_files(clust, savedir);
 
-    free(savedir);
+    // free(savedir);
 } 
