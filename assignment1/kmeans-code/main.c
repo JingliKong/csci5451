@@ -14,7 +14,7 @@
 int filestats(char *filename, ssize_t *tot_tokens, ssize_t *tot_lines){
 // Sets number of lines and total number of whitespace separated
 // tokens in the file. Returns -1 if file can't be opened, 0 on
-// success.
+// success. 
 //
 // EXAMPLE: int ret = filestats("digits_all_1e1.txt", &toks, &lines);
 // toks  is now 7860 : 10 lines with 786 tokens per line, label + ":" + 28x28 pixels
@@ -166,10 +166,11 @@ void save_pgm_files(KMClust* clust, char* savedir) {
     int nclust = clust->nclust; 
     int dim = clust->dim; 
     int dim_root = (int) sqrt(dim); 
-    if (clust->dim % dim_root == 0) {
+    // if (clust->dim % dim_root == 0) {
+    if (1){
         printf("Saving cluster centers to %p/cent_0000.pgm ...\n", savedir); 
         
-        float maxClusterFeatures[nclust]; // we have nclust number of max features to compare 
+        float* maxClusterFeatures = malloc(nclust * sizeof(float)); // we have nclust number of max features to compare 
         float maxfeat = 0;  
         for (int i = 0; i < nclust; i++) { //equivalent to the map in python finding the max 
             maxClusterFeatures[i] = floatMax(clust->features[i], dim); 
@@ -180,22 +181,37 @@ void save_pgm_files(KMClust* clust, char* savedir) {
             sprintf(outfile, "%s/cent%.04d.pgm\0", savedir, c);
             FILE *pgm = fopen(outfile, "w+"); 
             // char *p2 = strcat(strcat("P2", outfile), "\n");
-            fwrite("P2\n", 3, 1, pgm); 
-            char temp[100]; 
-            sprintf(temp, "%d %d\n", dim_root, dim_root);      
-            fwrite(temp, strlen(temp), 1, pgm);            
-            sprintf(temp, "%.0f\n", maxfeat); 
-            fwrite(temp, sizeof(temp), 1, pgm); 
+            // fwrite("P2\n", sizeof(char), 1, pgm); 
+            fprintf(pgm,"P2\n");
+            // char temp[100]; 
+            // sprintf(temp, "%d %d\n", dim_root, dim_root);      
+            // fwrite(temp, sizeof(char), strlen(temp), pgm);            
+            // sprintf(temp, "%.0f\n", maxfeat); 
+            // fwrite(temp, sizeof(char), sizeof(temp), pgm); 
+            fprintf(pgm, "%d %d\n", dim_root, dim_root);
+            fprintf(pgm,"%d\n",maxfeat);
+
             for (int d = 0; d < dim; d++) {
                 if ((d > 0 && d%dim_root) == 0) {
-                    fwrite("\n", 1, 1, pgm); 
+                    // fwrite("\n", 1, 1, pgm); 
+                    fprintf(pgm, "\n");
                 }
-                sprintf(temp, "%.3f\n", clust->features[c][d]); 
-                fwrite(temp, sizeof(temp), 1, pgm); 
+
+                // for (int w = 0; w < sizeof(clust->features[c][d]); w++){
+                //     fprintf(pgm, " ");
+                // }
+                int result = round(clust->features[c][d]);
+
+                fprintf(pgm, "%3d ", result);
+                // sprintf(temp, "%.3f\n", clust->features[c][d]); 
+                // fwrite(temp, sizeof(temp), 1, pgm); 
             }
-            fwrite("\n", 1, 1, pgm); 
+            // fwrite("\n", 1, 1, pgm); 
+            fprintf(pgm, "\n");
             fclose(pgm);
-        }  
+            
+        } 
+        free(maxClusterFeatures); 
     }
 }
 int main(int argc, char **argv) {

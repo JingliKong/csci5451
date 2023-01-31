@@ -6,6 +6,7 @@ all: main
 
 clean:
 	rm -f list_main *.o
+	rm -f kmeans
 
 # # 'make zip' to create zip file for submission
 # zip: clean clean-tests
