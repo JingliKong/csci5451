@@ -170,26 +170,30 @@ void save_pgm_files(KMClust* clust, char* savedir) {
     if (1){
         printf("Saving cluster centers to %p/cent_0000.pgm ...\n", savedir); 
         
-        float* maxClusterFeatures = malloc(nclust * sizeof(float)); // we have nclust number of max features to compare 
-        float maxfeat = 0;  
-        for (int i = 0; i < nclust; i++) { //equivalent to the map in python finding the max 
-            maxClusterFeatures[i] = floatMax(clust->features[i], dim); 
+        // float* maxClusterFeatures = malloc(nclust * sizeof(float)); // we have nclust number of max features to compare 
+        float maxfeat = -INFINITY;  
+        // for (int i = 0; i < nclust; i++) { //equivalent to the map in python finding the max 
+        //     maxClusterFeatures[i] = floatMax(clust->features[i], dim); 
+        // }
+        // maxfeat = floatMax(maxClusterFeatures, nclust); 
+        for (int i = 0; i < nclust; i++) {
+            for (int j = 0; j < dim; j++) {
+                float element = clust->features[i][j]; 
+                if (element > maxfeat) {
+                    maxfeat = element;  
+                }
+            }
         }
-        maxfeat = floatMax(maxClusterFeatures, nclust); 
         for (int c = 0; c < nclust; c++) {
             char outfile[100]; 
             sprintf(outfile, "%s/cent%.04d.pgm\0", savedir, c);
             FILE *pgm = fopen(outfile, "w+"); 
-            // char *p2 = strcat(strcat("P2", outfile), "\n");
-            // fwrite("P2\n", sizeof(char), 1, pgm); 
+
             fprintf(pgm,"P2\n");
-            // char temp[100]; 
-            // sprintf(temp, "%d %d\n", dim_root, dim_root);      
-            // fwrite(temp, sizeof(char), strlen(temp), pgm);            
-            // sprintf(temp, "%.0f\n", maxfeat); 
-            // fwrite(temp, sizeof(char), sizeof(temp), pgm); 
+     
             fprintf(pgm, "%d %d\n", dim_root, dim_root);
-            fprintf(pgm,"%d\n",maxfeat);
+            
+            fprintf(pgm,"%.0f\n", maxfeat);
 
             for (int d = 0; d < dim; d++) {
                 if ((d > 0 && d%dim_root) == 0) {
@@ -197,21 +201,17 @@ void save_pgm_files(KMClust* clust, char* savedir) {
                     fprintf(pgm, "\n");
                 }
 
-                // for (int w = 0; w < sizeof(clust->features[c][d]); w++){
-                //     fprintf(pgm, " ");
-                // }
                 int result = round(clust->features[c][d]);
 
                 fprintf(pgm, "%3d ", result);
-                // sprintf(temp, "%.3f\n", clust->features[c][d]); 
-                // fwrite(temp, sizeof(temp), 1, pgm); 
+ 
             }
             // fwrite("\n", 1, 1, pgm); 
             fprintf(pgm, "\n");
             fclose(pgm);
             
         } 
-        free(maxClusterFeatures); 
+        // free(maxClusterFeatures); 
     }
 }
 int main(int argc, char **argv) {
