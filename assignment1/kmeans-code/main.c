@@ -321,7 +321,7 @@ int main(int argc, char **argv) {
 
     // CONFUSION MATRIX
     int confusion[data->nlabels][nclust]; // am I initializing this right? 
-    for (int i = 0; i < data->nlabels i++){
+    for (int i = 0; i < data->nlabels; i++){
         for (int j = 0; j < nclust; j++){
             confusion[i][j] = 0;
         }
