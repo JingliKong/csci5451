@@ -1,0 +1,5 @@
+cuda01.cselabs.umn.edu
+cuda02.cselabs.umn.edu
+cuda03.cselabs.umn.edu
+cuda04.cselabs.umn.edu
+cuda05.cselabs.umn.edu

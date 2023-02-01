@@ -1,0 +1,349 @@
+csel-cuda-01 [04-mpi-code]% cat hostfile-cuda-full.txt 
+cuda01.cselabs.umn.edu
+cuda02.cselabs.umn.edu
+cuda03.cselabs.umn.edu
+cuda04.cselabs.umn.edu
+cuda05.cselabs.umn.edu
+csel-cuda-01 [04-mpi-code]% mpicc mpi_hello_plus.c 
+csel-cuda-01 [04-mpi-code]% mpirun -hostfile hostfile-cuda-full.txt -np 32 ./a.out
+No protocol specified
+No protocol specified
+P0023Hello world from process   23 of 32 
+P0028Hello world from process   28 of 32 
+P0021Hello world from process   21 of 32 
+P0003Hello world from process    3 of 32 
+P0012Hello world from process   12 of 32 
+P0015Hello world from process   15 of 32 
+P0016Hello world from process   16 of 32 
+P0005Hello world from process    5 of 32 
+P0009Hello world from process    9 of 32 
+P0010Hello world from process   10 of 32 
+P0014Hello world from process   14 of 32 
+P0019Hello world from process   19 of 32 
+P0020Hello world from process   20 of 32 
+P0025Hello world from process   25 of 32 
+P0027Hello world from process   27 of 32 
+P0002Hello world from process    2 of 32 
+P0030Hello world from process   30 of 32 
+P0031Hello world from process   31 of 32 
+P0000Hello world from process    0 of 32 
+P0004Hello world from process    4 of 32 
+P0006Hello world from process    6 of 32 
+P0011Hello world from process   11 of 32 
+P0013Hello world from process   13 of 32 
+P0017Hello world from process   17 of 32 
+P0018Hello world from process   18 of 32 
+P0022Hello world from process   22 of 32 
+P0026Hello world from process   26 of 32 
+P0024Hello world from process   24 of 32 
+P0029Hello world from process   29 of 32 
+P0001Hello world from process    1 of 32 
+P0008Hello world from process    8 of 32 
+P0007Hello world from process    7 of 32 
+csel-cuda-01 [04-mpi-code]% mpicc mpi_hello_plus.c 
+csel-cuda-01 [04-mpi-code]% mpirun -hostfile hostfile-cuda-full.txt -np 32 ./a.out
+No protocol specified
+No protocol specified
+P0023 [csel-cuda-01]: Hello world from process   23 of 32 
+P0024 [csel-cuda-01]: Hello world from process   24 of 32 
+P0025 [csel-cuda-01]: Hello world from process   25 of 32 
+P0026 [csel-cuda-01]: Hello world from process   26 of 32 
+P0027 [csel-cuda-01]: Hello world from process   27 of 32 
+P0029 [csel-cuda-01]: Hello world from process   29 of 32 
+P0030 [csel-cuda-01]: Hello world from process   30 of 32 
+P0031 [csel-cuda-01]: Hello world from process   31 of 32 
+P0005 [csel-cuda-01]: Hello world from process    5 of 32 
+P0008 [csel-cuda-01]: Hello world from process    8 of 32 
+P0010 [csel-cuda-01]: Hello world from process   10 of 32 
+P0014 [csel-cuda-01]: Hello world from process   14 of 32 
+P0015 [csel-cuda-01]: Hello world from process   15 of 32 
+P0007 [csel-cuda-01]: Hello world from process    7 of 32 
+P0011 [csel-cuda-01]: Hello world from process   11 of 32 
+P0012 [csel-cuda-01]: Hello world from process   12 of 32 
+P0016 [csel-cuda-01]: Hello world from process   16 of 32 
+P0017 [csel-cuda-01]: Hello world from process   17 of 32 
+P0018 [csel-cuda-01]: Hello world from process   18 of 32 
+P0019 [csel-cuda-01]: Hello world from process   19 of 32 
+P0022 [csel-cuda-01]: Hello world from process   22 of 32 
+P0001 [csel-cuda-01]: Hello world from process    1 of 32 
+P0003 [csel-cuda-01]: Hello world from process    3 of 32 
+P0004 [csel-cuda-01]: Hello world from process    4 of 32 
+P0006 [csel-cuda-01]: Hello world from process    6 of 32 
+P0009 [csel-cuda-01]: Hello world from process    9 of 32 
+P0020 [csel-cuda-01]: Hello world from process   20 of 32 
+P0021 [csel-cuda-01]: Hello world from process   21 of 32 
+P0028 [csel-cuda-01]: Hello world from process   28 of 32 
+P0000 [csel-cuda-01]: Hello world from process    0 of 32 
+P0002 [csel-cuda-01]: Hello world from process    2 of 32 
+P0013 [csel-cuda-01]: Hello world from process   13 of 32 
+csel-cuda-01 [04-mpi-code]% mpirun -hostfile hostfile-cuda-full.txt -np 64 ./a.out
+No protocol specified
+No protocol specified
+P0011 [csel-cuda-01]: Hello world from process   11 of 64 
+P0020 [csel-cuda-01]: Hello world from process   20 of 64 
+P0004 [csel-cuda-01]: Hello world from process    4 of 64 
+P0019 [csel-cuda-01]: Hello world from process   19 of 64 
+P0027 [csel-cuda-01]: Hello world from process   27 of 64 
+P0029 [csel-cuda-01]: Hello world from process   29 of 64 
+P0002 [csel-cuda-01]: Hello world from process    2 of 64 
+P0007 [csel-cuda-01]: Hello world from process    7 of 64 
+P0008 [csel-cuda-01]: Hello world from process    8 of 64 
+P0010 [csel-cuda-01]: Hello world from process   10 of 64 
+P0012 [csel-cuda-01]: Hello world from process   12 of 64 
+P0016 [csel-cuda-01]: Hello world from process   16 of 64 
+P0018 [csel-cuda-01]: Hello world from process   18 of 64 
+P0024 [csel-cuda-01]: Hello world from process   24 of 64 
+P0005 [csel-cuda-01]: Hello world from process    5 of 64 
+P0023 [csel-cuda-01]: Hello world from process   23 of 64 
+P0013 [csel-cuda-01]: Hello world from process   13 of 64 
+P0035 [csel-cuda-01]: Hello world from process   35 of 64 
+P0001 [csel-cuda-01]: Hello world from process    1 of 64 
+P0014 [csel-cuda-01]: Hello world from process   14 of 64 
+P0021 [csel-cuda-01]: Hello world from process   21 of 64 
+P0034 [csel-cuda-01]: Hello world from process   34 of 64 
+P0037 [csel-cuda-01]: Hello world from process   37 of 64 
+P0015 [csel-cuda-01]: Hello world from process   15 of 64 
+P0031 [csel-cuda-01]: Hello world from process   31 of 64 
+P0009 [csel-cuda-01]: Hello world from process    9 of 64 
+P0026 [csel-cuda-01]: Hello world from process   26 of 64 
+P0030 [csel-cuda-01]: Hello world from process   30 of 64 
+P0000 [csel-cuda-01]: Hello world from process    0 of 64 
+P0032 [csel-cuda-01]: Hello world from process   32 of 64 
+P0003 [csel-cuda-01]: Hello world from process    3 of 64 
+P0033 [csel-cuda-01]: Hello world from process   33 of 64 
+P0022 [csel-cuda-01]: Hello world from process   22 of 64 
+P0025 [csel-cuda-01]: Hello world from process   25 of 64 
+P0028 [csel-cuda-01]: Hello world from process   28 of 64 
+P0036 [csel-cuda-01]: Hello world from process   36 of 64 
+P0038 [csel-cuda-01]: Hello world from process   38 of 64 
+P0006 [csel-cuda-01]: Hello world from process    6 of 64 
+P0017 [csel-cuda-01]: Hello world from process   17 of 64 
+P0039 [csel-cuda-01]: Hello world from process   39 of 64 
+P0041 [csel-cuda-02]: Hello world from process   41 of 64 
+P0045 [csel-cuda-02]: Hello world from process   45 of 64 
+P0046 [csel-cuda-02]: Hello world from process   46 of 64 
+P0047 [csel-cuda-02]: Hello world from process   47 of 64 
+P0049 [csel-cuda-02]: Hello world from process   49 of 64 
+P0052 [csel-cuda-02]: Hello world from process   52 of 64 
+P0054 [csel-cuda-02]: Hello world from process   54 of 64 
+P0055 [csel-cuda-02]: Hello world from process   55 of 64 
+P0056 [csel-cuda-02]: Hello world from process   56 of 64 
+P0057 [csel-cuda-02]: Hello world from process   57 of 64 
+P0050 [csel-cuda-02]: Hello world from process   50 of 64 
+P0051 [csel-cuda-02]: Hello world from process   51 of 64 
+P0053 [csel-cuda-02]: Hello world from process   53 of 64 
+P0058 [csel-cuda-02]: Hello world from process   58 of 64 
+P0059 [csel-cuda-02]: Hello world from process   59 of 64 
+P0060 [csel-cuda-02]: Hello world from process   60 of 64 
+P0061 [csel-cuda-02]: Hello world from process   61 of 64 
+P0062 [csel-cuda-02]: Hello world from process   62 of 64 
+P0063 [csel-cuda-02]: Hello world from process   63 of 64 
+P0043 [csel-cuda-02]: Hello world from process   43 of 64 
+P0044 [csel-cuda-02]: Hello world from process   44 of 64 
+P0048 [csel-cuda-02]: Hello world from process   48 of 64 
+P0040 [csel-cuda-02]: Hello world from process   40 of 64 
+P0042 [csel-cuda-02]: Hello world from process   42 of 64 
+csel-cuda-01 [04-mpi-code]% mpirun -hostfile hostfile-cuda-full.txt -np 200 ./a.out
+No protocol specified
+No protocol specified
+P0003 [csel-cuda-01]: Hello world from process    3 of 200 
+P0018 [csel-cuda-01]: Hello world from process   18 of 200 
+P0028 [csel-cuda-01]: Hello world from process   28 of 200 
+P0031 [csel-cuda-01]: Hello world from process   31 of 200 
+P0004 [csel-cuda-01]: Hello world from process    4 of 200 
+P0012 [csel-cuda-01]: Hello world from process   12 of 200 
+P0019 [csel-cuda-01]: Hello world from process   19 of 200 
+P0025 [csel-cuda-01]: Hello world from process   25 of 200 
+P0033 [csel-cuda-01]: Hello world from process   33 of 200 
+P0038 [csel-cuda-01]: Hello world from process   38 of 200 
+P0035 [csel-cuda-01]: Hello world from process   35 of 200 
+P0036 [csel-cuda-01]: Hello world from process   36 of 200 
+P0001 [csel-cuda-01]: Hello world from process    1 of 200 
+P0002 [csel-cuda-01]: Hello world from process    2 of 200 
+P0007 [csel-cuda-01]: Hello world from process    7 of 200 
+P0010 [csel-cuda-01]: Hello world from process   10 of 200 
+P0013 [csel-cuda-01]: Hello world from process   13 of 200 
+P0023 [csel-cuda-01]: Hello world from process   23 of 200 
+P0030 [csel-cuda-01]: Hello world from process   30 of 200 
+P0089 [csel-cuda-03]: Hello world from process   89 of 200 
+P0011 [csel-cuda-01]: Hello world from process   11 of 200 
+P0029 [csel-cuda-01]: Hello world from process   29 of 200 
+P0037 [csel-cuda-01]: Hello world from process   37 of 200 
+P0006 [csel-cuda-01]: Hello world from process    6 of 200 
+P0190 [csel-cuda-05]: Hello world from process  190 of 200 
+P0123 [csel-cuda-04]: Hello world from process  123 of 200 
+P0021 [csel-cuda-01]: Hello world from process   21 of 200 
+P0022 [csel-cuda-01]: Hello world from process   22 of 200 
+P0024 [csel-cuda-01]: Hello world from process   24 of 200 
+P0026 [csel-cuda-01]: Hello world from process   26 of 200 
+P0027 [csel-cuda-01]: Hello world from process   27 of 200 
+P0032 [csel-cuda-01]: Hello world from process   32 of 200 
+P0034 [csel-cuda-01]: Hello world from process   34 of 200 
+P0014 [csel-cuda-01]: Hello world from process   14 of 200 
+P0017 [csel-cuda-01]: Hello world from process   17 of 200 
+P0080 [csel-cuda-03]: Hello world from process   80 of 200 
+P0020 [csel-cuda-01]: Hello world from process   20 of 200 
+P0039 [csel-cuda-01]: Hello world from process   39 of 200 
+P0000 [csel-cuda-01]: Hello world from process    0 of 200 
+P0005 [csel-cuda-01]: Hello world from process    5 of 200 
+P0008 [csel-cuda-01]: Hello world from process    8 of 200 
+P0009 [csel-cuda-01]: Hello world from process    9 of 200 
+P0015 [csel-cuda-01]: Hello world from process   15 of 200 
+P0016 [csel-cuda-01]: Hello world from process   16 of 200 
+P0155 [csel-cuda-04]: Hello world from process  155 of 200 
+P0093 [csel-cuda-03]: Hello world from process   93 of 200 
+P0192 [csel-cuda-05]: Hello world from process  192 of 200 
+P0077 [csel-cuda-02]: Hello world from process   77 of 200 
+P0159 [csel-cuda-04]: Hello world from process  159 of 200 
+P0047 [csel-cuda-02]: Hello world from process   47 of 200 
+P0125 [csel-cuda-04]: Hello world from process  125 of 200 
+P0104 [csel-cuda-03]: Hello world from process  104 of 200 
+P0127 [csel-cuda-04]: Hello world from process  127 of 200 
+P0108 [csel-cuda-03]: Hello world from process  108 of 200 
+P0141 [csel-cuda-04]: Hello world from process  141 of 200 
+P0117 [csel-cuda-03]: Hello world from process  117 of 200 
+P0149 [csel-cuda-04]: Hello world from process  149 of 200 
+P0053 [csel-cuda-02]: Hello world from process   53 of 200 
+P0083 [csel-cuda-03]: Hello world from process   83 of 200 
+P0124 [csel-cuda-04]: Hello world from process  124 of 200 
+P0085 [csel-cuda-03]: Hello world from process   85 of 200 
+P0164 [csel-cuda-05]: Hello world from process  164 of 200 
+P0126 [csel-cuda-04]: Hello world from process  126 of 200 
+P0097 [csel-cuda-03]: Hello world from process   97 of 200 
+P0167 [csel-cuda-05]: Hello world from process  167 of 200 
+P0129 [csel-cuda-04]: Hello world from process  129 of 200 
+P0101 [csel-cuda-03]: Hello world from process  101 of 200 
+P0170 [csel-cuda-05]: Hello world from process  170 of 200 
+P0131 [csel-cuda-04]: Hello world from process  131 of 200 
+P0102 [csel-cuda-03]: Hello world from process  102 of 200 
+P0172 [csel-cuda-05]: Hello world from process  172 of 200 
+P0137 [csel-cuda-04]: Hello world from process  137 of 200 
+P0063 [csel-cuda-02]: Hello world from process   63 of 200 
+P0113 [csel-cuda-03]: Hello world from process  113 of 200 
+P0179 [csel-cuda-05]: Hello world from process  179 of 200 
+P0138 [csel-cuda-04]: Hello world from process  138 of 200 
+P0073 [csel-cuda-02]: Hello world from process   73 of 200 
+P0115 [csel-cuda-03]: Hello world from process  115 of 200 
+P0182 [csel-cuda-05]: Hello world from process  182 of 200 
+P0139 [csel-cuda-04]: Hello world from process  139 of 200 
+P0075 [csel-cuda-02]: Hello world from process   75 of 200 
+P0116 [csel-cuda-03]: Hello world from process  116 of 200 
+P0189 [csel-cuda-05]: Hello world from process  189 of 200 
+P0142 [csel-cuda-04]: Hello world from process  142 of 200 
+P0043 [csel-cuda-02]: Hello world from process   43 of 200 
+P0081 [csel-cuda-03]: Hello world from process   81 of 200 
+P0196 [csel-cuda-05]: Hello world from process  196 of 200 
+P0144 [csel-cuda-04]: Hello world from process  144 of 200 
+P0045 [csel-cuda-02]: Hello world from process   45 of 200 
+P0082 [csel-cuda-03]: Hello world from process   82 of 200 
+P0193 [csel-cuda-05]: Hello world from process  193 of 200 
+P0146 [csel-cuda-04]: Hello world from process  146 of 200 
+P0055 [csel-cuda-02]: Hello world from process   55 of 200 
+P0084 [csel-cuda-03]: Hello world from process   84 of 200 
+P0194 [csel-cuda-05]: Hello world from process  194 of 200 
+P0148 [csel-cuda-04]: Hello world from process  148 of 200 
+P0195 [csel-cuda-05]: Hello world from process  195 of 200 
+P0156 [csel-cuda-04]: Hello world from process  156 of 200 
+P0061 [csel-cuda-02]: Hello world from process   61 of 200 
+P0086 [csel-cuda-03]: Hello world from process   86 of 200 
+P0065 [csel-cuda-02]: Hello world from process   65 of 200 
+P0087 [csel-cuda-03]: Hello world from process   87 of 200 
+P0197 [csel-cuda-05]: Hello world from process  197 of 200 
+P0158 [csel-cuda-04]: Hello world from process  158 of 200 
+P0067 [csel-cuda-02]: Hello world from process   67 of 200 
+P0088 [csel-cuda-03]: Hello world from process   88 of 200 
+P0198 [csel-cuda-05]: Hello world from process  198 of 200 
+P0150 [csel-cuda-04]: Hello world from process  150 of 200 
+P0069 [csel-cuda-02]: Hello world from process   69 of 200 
+P0091 [csel-cuda-03]: Hello world from process   91 of 200 
+P0199 [csel-cuda-05]: Hello world from process  199 of 200 
+P0151 [csel-cuda-04]: Hello world from process  151 of 200 
+P0071 [csel-cuda-02]: Hello world from process   71 of 200 
+P0092 [csel-cuda-03]: Hello world from process   92 of 200 
+P0160 [csel-cuda-05]: Hello world from process  160 of 200 
+P0152 [csel-cuda-04]: Hello world from process  152 of 200 
+P0076 [csel-cuda-02]: Hello world from process   76 of 200 
+P0094 [csel-cuda-03]: Hello world from process   94 of 200 
+P0161 [csel-cuda-05]: Hello world from process  161 of 200 
+P0153 [csel-cuda-04]: Hello world from process  153 of 200 
+P0079 [csel-cuda-02]: Hello world from process   79 of 200 
+P0095 [csel-cuda-03]: Hello world from process   95 of 200 
+P0162 [csel-cuda-05]: Hello world from process  162 of 200 
+P0157 [csel-cuda-04]: Hello world from process  157 of 200 
+P0041 [csel-cuda-02]: Hello world from process   41 of 200 
+P0096 [csel-cuda-03]: Hello world from process   96 of 200 
+P0163 [csel-cuda-05]: Hello world from process  163 of 200 
+P0120 [csel-cuda-04]: Hello world from process  120 of 200 
+P0049 [csel-cuda-02]: Hello world from process   49 of 200 
+P0099 [csel-cuda-03]: Hello world from process   99 of 200 
+P0165 [csel-cuda-05]: Hello world from process  165 of 200 
+P0121 [csel-cuda-04]: Hello world from process  121 of 200 
+P0051 [csel-cuda-02]: Hello world from process   51 of 200 
+P0100 [csel-cuda-03]: Hello world from process  100 of 200 
+P0166 [csel-cuda-05]: Hello world from process  166 of 200 
+P0122 [csel-cuda-04]: Hello world from process  122 of 200 
+P0057 [csel-cuda-02]: Hello world from process   57 of 200 
+P0103 [csel-cuda-03]: Hello world from process  103 of 200 
+P0168 [csel-cuda-05]: Hello world from process  168 of 200 
+P0128 [csel-cuda-04]: Hello world from process  128 of 200 
+P0059 [csel-cuda-02]: Hello world from process   59 of 200 
+P0105 [csel-cuda-03]: Hello world from process  105 of 200 
+P0169 [csel-cuda-05]: Hello world from process  169 of 200 
+P0132 [csel-cuda-04]: Hello world from process  132 of 200 
+P0064 [csel-cuda-02]: Hello world from process   64 of 200 
+P0109 [csel-cuda-03]: Hello world from process  109 of 200 
+P0171 [csel-cuda-05]: Hello world from process  171 of 200 
+P0133 [csel-cuda-04]: Hello world from process  133 of 200 
+P0066 [csel-cuda-02]: Hello world from process   66 of 200 
+P0110 [csel-cuda-03]: Hello world from process  110 of 200 
+P0173 [csel-cuda-05]: Hello world from process  173 of 200 
+P0134 [csel-cuda-04]: Hello world from process  134 of 200 
+P0068 [csel-cuda-02]: Hello world from process   68 of 200 
+P0111 [csel-cuda-03]: Hello world from process  111 of 200 
+P0174 [csel-cuda-05]: Hello world from process  174 of 200 
+P0135 [csel-cuda-04]: Hello world from process  135 of 200 
+P0070 [csel-cuda-02]: Hello world from process   70 of 200 
+P0112 [csel-cuda-03]: Hello world from process  112 of 200 
+P0175 [csel-cuda-05]: Hello world from process  175 of 200 
+P0136 [csel-cuda-04]: Hello world from process  136 of 200 
+P0072 [csel-cuda-02]: Hello world from process   72 of 200 
+P0118 [csel-cuda-03]: Hello world from process  118 of 200 
+P0176 [csel-cuda-05]: Hello world from process  176 of 200 
+P0140 [csel-cuda-04]: Hello world from process  140 of 200 
+P0074 [csel-cuda-02]: Hello world from process   74 of 200 
+P0177 [csel-cuda-05]: Hello world from process  177 of 200 
+P0143 [csel-cuda-04]: Hello world from process  143 of 200 
+P0078 [csel-cuda-02]: Hello world from process   78 of 200 
+P0106 [csel-cuda-03]: Hello world from process  106 of 200 
+P0178 [csel-cuda-05]: Hello world from process  178 of 200 
+P0145 [csel-cuda-04]: Hello world from process  145 of 200 
+P0040 [csel-cuda-02]: Hello world from process   40 of 200 
+P0107 [csel-cuda-03]: Hello world from process  107 of 200 
+P0180 [csel-cuda-05]: Hello world from process  180 of 200 
+P0147 [csel-cuda-04]: Hello world from process  147 of 200 
+P0042 [csel-cuda-02]: Hello world from process   42 of 200 
+P0114 [csel-cuda-03]: Hello world from process  114 of 200 
+P0181 [csel-cuda-05]: Hello world from process  181 of 200 
+P0044 [csel-cuda-02]: Hello world from process   44 of 200 
+P0119 [csel-cuda-03]: Hello world from process  119 of 200 
+P0183 [csel-cuda-05]: Hello world from process  183 of 200 
+P0154 [csel-cuda-04]: Hello world from process  154 of 200 
+P0046 [csel-cuda-02]: Hello world from process   46 of 200 
+P0090 [csel-cuda-03]: Hello world from process   90 of 200 
+P0184 [csel-cuda-05]: Hello world from process  184 of 200 
+P0130 [csel-cuda-04]: Hello world from process  130 of 200 
+P0048 [csel-cuda-02]: Hello world from process   48 of 200 
+P0098 [csel-cuda-03]: Hello world from process   98 of 200 
+P0185 [csel-cuda-05]: Hello world from process  185 of 200 
+P0050 [csel-cuda-02]: Hello world from process   50 of 200 
+P0187 [csel-cuda-05]: Hello world from process  187 of 200 
+P0052 [csel-cuda-02]: Hello world from process   52 of 200 
+P0188 [csel-cuda-05]: Hello world from process  188 of 200 
+P0054 [csel-cuda-02]: Hello world from process   54 of 200 
+P0191 [csel-cuda-05]: Hello world from process  191 of 200 
+P0056 [csel-cuda-02]: Hello world from process   56 of 200 
+P0058 [csel-cuda-02]: Hello world from process   58 of 200 
+P0186 [csel-cuda-05]: Hello world from process  186 of 200 
+P0060 [csel-cuda-02]: Hello world from process   60 of 200 
+P0062 [csel-cuda-02]: Hello world from process   62 of 200 
+csel-cuda-01 [04-mpi-code]% 

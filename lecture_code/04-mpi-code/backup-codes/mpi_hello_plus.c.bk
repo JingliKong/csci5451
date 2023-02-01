@@ -1,0 +1,55 @@
+// Slightly more advanced hello world. Each processor reports its
+// proc_id and the host machine on which it is running. Includes two
+// utilities for printing messages prepended with the proc_id and
+// printing only on the root.
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <assert.h>
+#include <math.h>
+#include <errno.h>
+#include <stdarg.h>
+#include <string.h>
+#include <mpi.h>
+
+int total_procs, proc_id, name_len;
+char proc_name[256];
+
+/* Utility to print messages with the proc # prepended to the
+   message. Works like printf(). */
+void pprintf(const char* format, ...) { 
+  va_list args;
+  char buffer[2048];
+  sprintf(buffer,"P%04d: ",proc_id);
+  va_start (args, format);
+  vsprintf(&buffer[5], format, args);
+  va_end (args);
+  printf("%s",buffer);
+}
+
+/* Utility to have only the root processor print messages with the
+   message. Works like printf(). */
+void rprintf(const char* format, ...) { 
+  if(proc_id == 0){
+    va_list args;
+    va_start (args, format);
+    vprintf(format, args);
+    va_end (args);
+  }
+}
+
+/* Initialize MPI and relevant variables then have each proc say hello  */
+int main (int argc, char *argv[]){
+  MPI_Init (&argc, &argv);                      /* starts MPI */
+  MPI_Comm_rank (MPI_COMM_WORLD, &proc_id);     /* get current process id */
+  MPI_Comm_size (MPI_COMM_WORLD, &total_procs); /* get number of processes */
+  MPI_Get_processor_name(proc_name, &name_len); /* get the symbolic host name */
+
+  /* Each processor prints; message is appended with proc # */
+  pprintf( "(host: %s) Hello world from process %d of %d \n", proc_name, proc_id, total_procs);
+
+  /* Only the root processor 0 prints */
+  rprintf( "Hello from the root processor %d of %d (host: %s)\n", proc_id, total_procs,proc_name);
+  MPI_Finalize();
+  return 0;
+}

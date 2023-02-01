@@ -1,0 +1,3 @@
+csel-plate-02.cselabs.umn.edu
+csel-plate-03.cselabs.umn.edu
+csel-plate-04.cselabs.umn.edu

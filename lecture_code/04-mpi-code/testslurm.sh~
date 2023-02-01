@@ -1,0 +1,10 @@
+#!/bin/bash -l
+#SBATCH --time=0:00:30
+#SBATCH --ntasks=32
+#SBATCH --mem=1g
+#SBATCH -p small
+#SBATCH --mail-type=ALL
+#SBATCH --mail-user=kauffman@umn.edu
+cd ~/04-mpi-code
+module load ompi
+mpirun -np 32 ./a.out > testrun

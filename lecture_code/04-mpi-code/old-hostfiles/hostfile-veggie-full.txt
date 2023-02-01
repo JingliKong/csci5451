@@ -1,0 +1,5 @@
+csel-broccoli.cselabs.umn.edu
+csel-carrot.cselabs.umn.edu
+csel-potato.cselabs.umn.edu
+csel-radish.cselabs.umn.edu
+csel-spinach.cselabs.umn.edu

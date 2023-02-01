@@ -1,0 +1,50 @@
+// Simple example code to demonstrate send/receive communication.
+// Sends buffers initialized
+
+#include <stdio.h>
+#include <mpi.h>
+
+#define NAME_LEN 255
+
+int main (int argc, char *argv[]){
+  MPI_Init (&argc, &argv);	// starts MPI
+
+  // Basic info
+  int npes, myrank, name_len;   
+  char processor_name[NAME_LEN];
+  MPI_Comm_size(MPI_COMM_WORLD, &npes); 
+  MPI_Comm_rank(MPI_COMM_WORLD, &myrank); 
+  MPI_Get_processor_name(processor_name, &name_len);
+
+  // Fill a with powers of proc rank
+  int a[10], b[10], i, val = 1;
+  for(i=0; i<10; i++){
+    a[i] = val;
+    val *= myrank;
+  }
+  
+  // Exchange messages with "adjacent" procs
+  int partner =-1;
+  if (myrank%2 == 0) {          // Evens look up, send first, then receive
+    partner = (myrank+1)%npes;
+    MPI_Send(a, 10, MPI_INT, partner, 1, MPI_COMM_WORLD);
+    MPI_Recv(b, 10, MPI_INT, partner, 1, MPI_COMM_WORLD, MPI_STATUS_IGNORE); 
+  }
+  else{                         // Odds look down, receive first, then send
+    partner = (myrank-1+npes)%npes;
+    MPI_Recv(b, 10, MPI_INT, partner, 1, MPI_COMM_WORLD, MPI_STATUS_IGNORE); 
+    MPI_Send(a, 10, MPI_INT, partner, 1, MPI_COMM_WORLD);
+  }
+  // Note that the above code breaks if the number of processors being run 
+
+
+  // Compute totals
+  int total = 0;
+  for(i=0; i<10; i++){
+    total += a[i]+b[i];
+  }
+  printf("Proc %d (%s) with %d: Total = %d\n",myrank,processor_name,partner,total);
+
+  MPI_Finalize();
+  return 0;
+}
