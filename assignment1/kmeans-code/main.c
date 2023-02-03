@@ -1,7 +1,6 @@
-// Running: f
+// Running: ./kmeans sample-mnist-data/digits_all_1e2.txt 10 outdir
 // gdb -tui --args kmeans sample-mnist-data/digits_all_1e2.txt 10 outdir  
 // Compile: gcc -g main.c -o kmeans -lm
-// mine: ./kmeans sample-mnist-data/test.txt 3 outdir
 // running python: ./kmeans.py sample-mnist-data/digits_all_1e2.txt 10 outdir
 // gdb -tui --args kmeans sample-mnist-data/test.txt 3 outdir 
 #include <stdlib.h>
@@ -10,6 +9,7 @@
 #include <math.h>
 #include <stdio.h>
 #include <ctype.h>  // for isspace() etc.
+#include <time.h> // for comparing time with python version 
 
 int filestats(char *filename, ssize_t *tot_tokens, ssize_t *tot_lines){
 // Sets number of lines and total number of whitespace separated
@@ -70,6 +70,26 @@ typedef struct KMData {
     int* labels;  // label for data if available
     int nlabels;  // max value of labels +1, number 0,1,...,nlabel0
 } KMData;
+
+void free2dArray(float** arr, int dim1) {
+    for (int i = 0; i < dim1; i++) {
+        free(arr[i]); 
+    }
+    free(arr); 
+}
+
+void KMClustCleanup(KMClust *clust) {
+    free(clust->counts); 
+    free2dArray(clust->features, clust->dim); 
+    free(clust);
+}
+
+void KMDataCleanup(KMData *data) {
+    free(data->assigns);
+    free(data->labels);
+    free2dArray(data->features); 
+    free(data); 
+}
 
 float **malloc2dFloatArray(int dim1, int dim2) { // This is where I learned how to malloc a 2d array https://www.youtube.com/watch?v=aR7tkVj3UU0 
     float **ipp; 
@@ -170,12 +190,8 @@ void save_pgm_files(KMClust* clust, char* savedir) {
     if (1){
         printf("Saving cluster centers to %p/cent_0000.pgm ...\n", savedir); 
         
-        // float* maxClusterFeatures = malloc(nclust * sizeof(float)); // we have nclust number of max features to compare 
         float maxfeat = -INFINITY;  
-        // for (int i = 0; i < nclust; i++) { //equivalent to the map in python finding the max 
-        //     maxClusterFeatures[i] = floatMax(clust->features[i], dim); 
-        // }
-        // maxfeat = floatMax(maxClusterFeatures, nclust); 
+
         for (int i = 0; i < nclust; i++) {
             for (int j = 0; j < dim; j++) {
                 float element = clust->features[i][j]; 
@@ -211,10 +227,12 @@ void save_pgm_files(KMClust* clust, char* savedir) {
             fclose(pgm);
             
         } 
-        // free(maxClusterFeatures); 
+
     }
 }
 int main(int argc, char **argv) {
+    clock_t start = clock(), diff; //from the following stackoverflow post (https://stackoverflow.com/questions/459691/best-timing-method-in-c)
+
     if (argc < 3) {
         exit(-1); 
     }
@@ -400,5 +418,12 @@ int main(int argc, char **argv) {
     // SAVE PGM FILES CONDITIONALLY
     save_pgm_files(clust, savedir);
 
+    //Freeing allocated memory  
+    KMDataCleanup(data); 
+    KMClustCleanup(clust); 
+
+    diff = clock() - start;
+    int msec = diff * 1000 / CLOCKS_PER_SEC;
+    printf("Time taken %d seconds %d milliseconds\n", msec/1000, msec%1000);
     // free(savedir);
 } 
