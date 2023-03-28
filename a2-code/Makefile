@@ -88,6 +88,8 @@ prob2: kmeans_serial
 
 kmeans_serial : kmeans_serial.c kmeans_util.c
 	$(GCC) -o $@ $^ -lm
+# kmeans_serial : kmeans_serial.c 
+# 	$(GCC) -o $@ $^ -lm
 
 test-prob2: test-setup prob2 
 	./testy test_kmeans_serial.org $(testnum)

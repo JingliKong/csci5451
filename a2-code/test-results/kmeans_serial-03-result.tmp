@@ -1,0 +1,67 @@
+* (TEST 3) digits_all_1e3.txt 13
+COMMENTS:
+Modest tests on 1000 data points with 13 clusters. Check program output
+is correct.
+
+** program: ./kmeans_serial sample-mnist-data/digits_all_1e3.txt 13 test-results/outdir3 500
+To run this individual test in GDB use the command:
+  gdb --args ./kmeans_serial sample-mnist-data/digits_all_1e3.txt 13 test-results/outdir3 500
+but any input to the program must be typed within the debugger
+
+** --- Failure messages --- 
+- FAILURE(139) due to SIGSEGV (segmentation fault) from OS
+- FAILURE: Output Mismatch at lines marked
+
+** --- Side by Side Differences ---
+- Expect output in: test-results/raw/kmeans_serial-03-expect.tmp
+- Actual output in: test-results/raw/kmeans_serial-03-actual.tmp
+- Differing lines have a character like '|' '>' or '<' in the middle
+#+BEGIN_SRC sbs-diff
+==== EXPECT ====                                                                ==== ACTUAL ====                                                             
+datafile: sample-mnist-data/digits_all_1e3.txt                                  datafile: sample-mnist-data/digits_all_1e3.txt
+nclust: 13                                                                      nclust: 13
+savedir: test-results/outdir3                                                   savedir: test-results/outdir3
+ndata: 1000                                                                     ndata: 1000
+dim: 784                                                                        dim: 784
+
+==CLUSTERING: MAXITER 500==                                                     ==CLUSTERING: MAXITER 500==
+ITER NCHANGE CLUST_COUNTS                                                       ITER NCHANGE CLUST_COUNTS
+  1:   806 |   27   64   37   91   99  201  120   42   82  106   37   52   42     1:   806 |   27   64   37   91   99  201  120   42   82  106   37   52   42
+  2:   297 |   44   67   38   99   86  164   95   75   60   95   55   78   44     2:   297 |   44   67   38   99   86  164   95   75   60   95   55   78   44
+  3:   123 |   59   70   53  103   81  150   86   78   54   88   56   80   42     3:   123 |   59   70   53  103   81  150   86   78   54   88   56   80   42
+  4:    74 |   69   76   56  101   75  144   78   80   52   85   62   81   41     4:    74 |   69   76   56  101   75  144   78   80   52   85   62   81   41
+  5:    47 |   70   80   56   98   81  142   73   80   54   83   63   80   40     5:    47 |   70   80   56   98   81  142   73   80   54   83   63   80   40
+  6:    33 |   72   77   60   97   79  143   66   84   55   82   62   83   40     6:    33 |   72   77   60   97   79  143   66   84   55   82   62   83   40
+  7:    19 |   77   76   62   98   79  143   62   86   53   80   60   84   40     7:    19 |   77   76   62   98   79  143   62   86   53   80   60   84   40
+  8:    17 |   79   77   64   97   76  143   61   86   52   78   61   86   40     8:    17 |   79   77   64   97   76  143   61   86   52   78   61   86   40
+  9:    13 |   80   77   65   96   77  145   60   86   52   76   61   85   40     9:    13 |   80   77   65   96   77  145   60   86   52   76   61   85   40
+ 10:     7 |   80   77   65   97   77  147   59   86   52   74   61   85   40    10:     7 |   80   77   65   97   77  147   59   86   52   74   61   85   40
+ 11:     3 |   80   77   66   97   77  148   58   86   52   74   60   85   40    11:     3 |   80   77   66   97   77  148   58   86   52   74   60   85   40
+ 12:     3 |   80   77   66   97   77  148   57   87   52   74   60   85   40    12:     3 |   80   77   66   97   77  148   57   87   52   74   60   85   40
+ 13:     3 |   80   77   66   97   77  148   55   87   52   73   63   85   40    13:     3 |   80   77   66   97   77  148   55   87   52   73   63   85   40
+ 14:     3 |   80   77   66   97   77  148   52   87   52   73   66   85   40    14:     3 |   80   77   66   97   77  148   52   87   52   73   66   85   40
+ 15:     0 |   80   77   66   97   77  148   52   87   52   73   66   85   40    15:     0 |   80   77   66   97   77  148   52   87   52   73   66   85   40
+CONVERGED: after 16 iterations                                                  CONVERGED: after 16 iterations
+                                                                                ==CONFUSION MATRIX + COUNTS==
+==CONFUSION MATRIX + COUNTS==                                                   LABEL \ CLUST  
+LABEL \ CLUST                                                                       0    1    2    3    4    5    6    7    8    9   10   11   12  TOT
+       0    1    2    3    4    5    6    7    8    9   10   11   12  TOT        0:    0   16    2    0    1    0    0    0    0   61    5    0    0   85
+ 0:    0   16    2    0    1    0    0    0    0   61    5    0    0   85        1:    0    0    4    0    0  119    0    3    0    0    0    0    0  126
+ 1:    0    0    4    0    0  119    0    3    0    0    0    0    0  126        2:    4    2    5    1    2    7    0   81    3    6    3    0    2  116
+ 2:    4    2    5    1    2    7    0   81    3    6    3    0    2  116        3:    4    0   39    0    0    4   22    2    2    0   31    2    1  107
+ 3:    4    0   39    0    0    4   22    2    2    0   31    2    1  107        4:    0    2    0   31   39    1    0    0    8    1    0   28    0  110
+ 4:    0    2    0   31   39    1    0    0    8    1    0   28    0  110        5:   24    4    8    9    1    4   19    0    0    0   16    2    0   87
+ 5:   24    4    8    9    1    4   19    0    0    0   16    2    0   87        6:    1   50    3    0   26    2    0    0    0    5    0    0    0   87
+ 6:    1   50    3    0   26    2    0    0    0    5    0    0    0   87        7:    0    0    0   26    1    8    0    0   24    0    0    3   37   99
+ 7:    0    0    0   26    1    8    0    0   24    0    0    3   37   99        8:   46    3    5    2    2    2   10    1    7    0    9    2    0   89
+ 8:   46    3    5    2    2    2   10    1    7    0    9    2    0   89        9:    1    0    0   28    5    1    1    0    8    0    2   48    0   94
+ 9:    1    0    0   28    5    1    1    0    8    0    2   48    0   94       TOT   80   77   66   97   77  148   52   87   52   73   66   85   40 1000
+TOT   80   77   66   97   77  148   52   87   52   73   66   85   40 1000
+                                                                                Saving cluster labels to file test-results/outdir3/labels.txt
+Saving cluster labels to file test-results/outdir3/labels.txt                 (
+Saving cluster centers to test-results/outdir3/cent_0000.pgm ...              <
+#+END_SRC
+
+** --- Line Differences ---
+EXPECT:  42) Saving cluster centers to test-results/outdir3/cent_0000.pgm ...
+

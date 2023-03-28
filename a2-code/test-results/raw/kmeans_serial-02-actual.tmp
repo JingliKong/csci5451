@@ -1,0 +1,31 @@
+datafile: sample-mnist-data/digits_all_1e2.txt
+nclust: 10
+savedir: test-results/outdir2
+ndata: 100
+dim: 784
+
+==CLUSTERING: MAXITER 500==
+ITER NCHANGE CLUST_COUNTS
+  1:    35 |    9   14    9    7   10    6   15   10    8   12
+  2:    15 |    8   14    9    6    9    6   16   12    8   12
+  3:     8 |    8   15    9    6   10    4   16   15    8    9
+  4:     4 |    9   15    9    7   10    4   14   15    8    9
+  5:     2 |    9   14    9    7   10    4   14   16    8    9
+  6:     0 |    9   14    9    7   10    4   14   16    8    9
+CONVERGED: after 7 iterations
+==CONFUSION MATRIX + COUNTS==
+LABEL \ CLUST  
+    0    1    2    3    4    5    6    7    8    9  TOT
+ 0:    0    1    0    4    0    1    0    0    2    0    8
+ 1:    0    0    0    0    9    0    0    5    0    0   14
+ 2:    0    3    1    0    0    1    0    3    0    0    8
+ 3:    4    0    1    0    1    0    0    0    5    0   11
+ 4:    0    0    3    1    0    1    8    1    0    0   14
+ 5:    0    0    1    2    0    1    0    2    1    0    7
+ 6:    0    9    1    0    0    0    0    0    0    0   10
+ 7:    5    0    0    0    0    0    3    3    0    4   15
+ 8:    0    1    0    0    0    0    0    1    0    0    2
+ 9:    0    0    2    0    0    0    3    1    0    5   11
+TOT    9   14    9    7   10    4   14   16    8    9  100
+
+Saving cluster labels to file test-results/outdir2/labels.txt
