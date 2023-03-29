@@ -1,10 +1,22 @@
 // Running: ./kmeans_serial sample-mnist-data/digits_all_1e2.txt 10 outdir
 // gdb -tui --args kmeans sample-mnist-data/digits_all_1e2.txt 10 outdir  
-// Compile: gcc-11 -g kmeans_serial.c kmeans_util.c -o kmeans_serial -lm
+// Compile: gcc -g kmeans_serial.c kmeans_util.c -o kmeans_serial -lm
 // running python: ./kmeans.py sample-mnist-data/digits_all_1e2.txt 10 outdir
-// gdb -tui --args kmeans sample-mnist-data/test.txt 3 outdir 
+// gdb -tui --args kmeans_serial sample-mnist-data/test.txt 3 outdir 
 
 // valgrind --leak-check=yes ./kmeans sample-mnist-data/digits_all_1e2.txt 10 outdir
+
+// test 1 failure: ./kmeans_serial sample-mnist-data/digits_all_1e2.txt 10 test-results/outdir1 500
+/*
+Test 1: 
+./kmeans.py sample-mnist-data/digits_all_1e2.txt 10 test-results/outdir1 500
+./kmeans_serial sample-mnist-data/digits_all_1e2.txt 10 test-results/outdir1 500
+
+Test 3: 
+
+./kmeans_serial sample-mnist-data/digits_all_1e3.txt 13 test-results/outdir3 500
+
+*/
 #include <stdlib.h>
 #include <string.h>
 #include <limits.h>
@@ -14,10 +26,12 @@
 #include <time.h> // for comparing time with python version 
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <dirent.h>
+#include <unistd.h>
 // only on M1 
 #include <ctype.h>
 
-
+int filestats(char *filename, ssize_t *tot_tokens, ssize_t *tot_lines); 
 
 typedef struct KMClust {
     int nclust;   // number of clusters, the "k" in kmeans
@@ -77,7 +91,7 @@ KMData* kmdata_load(char* datafile) {
     //length of features array 
     int featuresLength = tot_tokens/tot_lines - 2; 
     // allocating space for all the features arrays 
-    data->features = malloc(tot_lines * tot_tokens * sizeof(int)); // allocating a 2d array for the features 
+    data->features = malloc(tot_lines * tot_tokens * sizeof(float)); // allocating a 2d array for the features 
 
     int ndata = 0; // keeping track of ndata 
     int currentIntToken = 0; // used to store the current feature token 
@@ -108,7 +122,8 @@ KMClust* kmclust_new(int nclust, int dim) {
     clust->nclust = nclust;
     clust->dim = dim;
 
-    clust->features = malloc2dFloatArray(nclust, dim); 
+    clust->features = malloc(sizeof(float) * nclust * dim); 
+    
     clust->counts = malloc(sizeof(int) * nclust); 
   
     for (int c = 0; c < nclust; c++) {
@@ -124,39 +139,38 @@ void save_pgm_files(KMClust* clust, char* savedir) {
     int dim = clust->dim; 
     int dim_root = (int) sqrt(dim); 
     // if (clust->dim % dim_root == 0) {
-    if (1){
-        printf("Saving cluster centers to %p/cent_0000.pgm ...\n", savedir); 
+    if (clust->dim % dim_root == 0) {
+        printf("Saving cluster centers to %s/cent_0000.pgm ...\n", savedir); 
         
         float maxfeat = -INFINITY;  
 
         for (int i = 0; i < nclust; i++) {
             for (int j = 0; j < dim; j++) {
-                float element = clust->features[j * dim + i]; 
+                float element = clust->features[i * dim + j]; 
                 if (element > maxfeat) {
                     maxfeat = element;  
                 }
             }
         }
         for (int c = 0; c < nclust; c++) {
-            char outfile[100]; 
-            sprintf(outfile, "%s/cent%.04d.pgm\0", savedir, c);
+            char outfile[1024]; 
+            sprintf(outfile, "%s/cent_%04d.pgm", savedir, c);
             FILE *pgm = fopen(outfile, "w+"); 
 
             fprintf(pgm,"P2\n");
      
             fprintf(pgm, "%d %d\n", dim_root, dim_root);
             
-            fprintf(pgm,"%.0f\n", maxfeat);
+            fprintf(pgm,"%.0f", maxfeat);
 
             for (int d = 0; d < dim; d++) {
                 if ((d > 0 && d%dim_root) == 0) {
                     // fwrite("\n", 1, 1, pgm); 
                     fprintf(pgm, "\n");
                 }
-
-                int result = round(c * dim + d);
-
-                fprintf(pgm, "%3d ", result);
+				fprintf(pgm, "%3.0f ", clust->features[c*dim + d]); 
+                // int result = round(c * dim + d);
+                // fprintf(pgm, "%3d ", result);
  
             }
             // fwrite("\n", 1, 1, pgm); 
@@ -175,13 +189,32 @@ int main(int argc, char **argv) {
     }
     char* datafile = argv[1]; 
     int nclust = atoi(argv[2]);
-    // char *savedir = malloc(100*sizeof(char)); //for now we are just going to allocate 100 bytes for the savedir name  
-    char savedir[100]; 
+    char *savedir = malloc(strlen(argv[3]) + 1); // Allocating enough space for the dir len + 1 for null terminator? 
     int MAXITER = 100; 
 
     if (argc > 3) {
         strcpy(savedir, argv[3]);
-        int status = mkdir(savedir, S_IRUSR | S_IWUSR | S_IXUSR); // maybe later do error checking       
+        int status = mkdir(savedir, S_IRWXU); 
+        if (status == -1) { // Error has occured with creating directory 
+            DIR* dir = opendir(savedir);
+            if (dir != NULL) {
+				// struct dirent *entry;
+				// char filepath[256]; 
+
+				// while ((entry = readdir(dir)) != NULL) {
+				// 	snprintf(filepath, sizeof(filepath), "%s/%s", savedir, entry->d_name);
+				// 	unlink(filepath); 
+				// }
+                closedir(dir); 
+            }
+
+            int rmd = rmdir(savedir); //removing the existing dir 
+
+            if (rmd == 0) { // if we sucessfully remove dir 
+                rmd = mkdir(savedir, S_IRWXU); 
+            }
+
+        } 
     }
     if (argc > 4) {
         MAXITER = atoi(argv[4]); 
@@ -342,13 +375,13 @@ int main(int argc, char **argv) {
     // strcpy(outfile, savedir);
     // strcat(outfile, "/labels.txt");
 
-    char outfile[50]; 
+    char *outfile = malloc(strlen(argv[3]) + strlen("/labels.txt") + strlen(argv[3]));  // recall the size of savedir is argv[3]
     sprintf(outfile, "%s/labels.txt", savedir); 
     printf("Saving cluster labels to file %s\n", outfile);
 
     FILE* file = fopen(outfile, "w");
     for (int i = 0; i < data->ndata; i++){
-        fprintf(file, "%2d %2d", data->labels[i], data->assigns[i]);
+        fprintf(file, "%2d %2d\n", data->labels[i], data->assigns[i]);
     }
     fclose(file); 
 
@@ -356,10 +389,27 @@ int main(int argc, char **argv) {
     save_pgm_files(clust, savedir);
 
     //Freeing allocated memory  
-    //TODO 
+
+    // freeing KMDATA struct 
+    free(data->features); 
+    free(data->assigns);
+    free(data->labels); 
+	free(data); 
+
+	// freeing KMClust struct 
+	free(clust->features); 
+	free(clust->counts); 
+	free(clust);
+
+	// Mischalenous frees 
+	free(savedir); 
+	free(outfile); 
 
     diff = clock() - start;
     int msec = diff * 1000 / CLOCKS_PER_SEC;
-    printf("Time taken %d seconds %d milliseconds\n", msec/1000, msec%1000);
+    // printf("Time taken %d seconds %d milliseconds\n", msec/1000, msec%1000);
     // free(savedir);
 } 
+
+// b 369
+// b 184
