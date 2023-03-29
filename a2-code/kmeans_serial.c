@@ -1,6 +1,6 @@
-// Running: ./kmeans sample-mnist-data/digits_all_1e2.txt 10 outdir
+// Running: ./kmeans_serial sample-mnist-data/digits_all_1e2.txt 10 outdir
 // gdb -tui --args kmeans sample-mnist-data/digits_all_1e2.txt 10 outdir  
-// Compile: gcc -g kmeans_serial.c -o kmeans -lm
+// Compile: gcc-11 -g kmeans_serial.c kmeans_util.c -o kmeans_serial -lm
 // running python: ./kmeans.py sample-mnist-data/digits_all_1e2.txt 10 outdir
 // gdb -tui --args kmeans sample-mnist-data/test.txt 3 outdir 
 
@@ -13,54 +13,29 @@
 #include <ctype.h>  // for isspace() etc.
 #include <time.h> // for comparing time with python version 
 #include <sys/types.h>
-
+#include <sys/stat.h>
+// only on M1 
+#include <ctype.h>
 
 
 
 typedef struct KMClust {
     int nclust;   // number of clusters, the "k" in kmeans
     int dim;      // dimension of features for data
-    float** features; // 2D indexing for individual cluster center features
+    float* features; // 2D indexing for individual cluster center features
     int* counts;
 } KMClust;
 
 typedef struct KMData {
     int ndata;    // count of data
     int dim;      // dimension of features for data
-    float** features; // pointers to individual features
+    float* features; // pointers to individual features
     int* assigns; // cluster to which data is assigned
     int* labels;  // label for data if available
     int nlabels;  // max value of labels +1, number 0,1,...,nlabel0
 } KMData;
 
-void free2dArray(float** arr, int dim1) {
-    for (int i = 0; i < dim1; i++) {
-        free(arr[i]); 
-    }
-    free(arr); 
-}
 
-void KMClustCleanup(KMClust *clust) {
-    free(clust->counts); 
-    free2dArray(clust->features, clust->dim); 
-    free(clust);
-}
-
-void KMDataCleanup(KMData *data) {
-    free(data->assigns);
-    free(data->labels);
-    free2dArray(data->features, data->ndata); 
-    free(data); 
-}
-
-float **malloc2dFloatArray(int dim1, int dim2) { // This is where I learned how to malloc a 2d array https://www.youtube.com/watch?v=aR7tkVj3UU0 
-    float **ipp; 
-    ipp = (float **) malloc (dim1*sizeof(float*));
-    for (int i =0; i < dim1; i++) {
-        ipp[i] = (float *) malloc(dim2 * sizeof(float)); 
-    }
-    return ipp; 
-} 
 
 int intMax (int *arr, int len) {
     int current_min = INT_MIN; 
@@ -102,7 +77,7 @@ KMData* kmdata_load(char* datafile) {
     //length of features array 
     int featuresLength = tot_tokens/tot_lines - 2; 
     // allocating space for all the features arrays 
-    data->features = malloc2dFloatArray(tot_lines, tot_tokens/tot_lines); // allocating a 2d array for the features 
+    data->features = malloc(tot_lines * tot_tokens * sizeof(int)); // allocating a 2d array for the features 
 
     int ndata = 0; // keeping track of ndata 
     int currentIntToken = 0; // used to store the current feature token 
@@ -113,7 +88,7 @@ KMData* kmdata_load(char* datafile) {
         data->labels[i] = currentIntToken; // appending label to labels array 
         for (int j = 0; j < featuresLength; j++) {
             fscanf(fin, "%d", &currentIntToken);
-            data->features[i][j] = currentIntToken; // appending feature to feature array   
+            data->features[i * featuresLength + j] = currentIntToken; // appending feature to feature array   
         }
     }
     fclose(fin);
@@ -138,7 +113,7 @@ KMClust* kmclust_new(int nclust, int dim) {
   
     for (int c = 0; c < nclust; c++) {
         for (int d = 0; d < dim; d++) {
-            clust->features[c][d] = 0.0; 
+            clust->features[c * dim + d] = 0.0; 
         }
         clust->counts[c] = 0.0; 
     }
@@ -156,7 +131,7 @@ void save_pgm_files(KMClust* clust, char* savedir) {
 
         for (int i = 0; i < nclust; i++) {
             for (int j = 0; j < dim; j++) {
-                float element = clust->features[i][j]; 
+                float element = clust->features[j * dim + i]; 
                 if (element > maxfeat) {
                     maxfeat = element;  
                 }
@@ -179,7 +154,7 @@ void save_pgm_files(KMClust* clust, char* savedir) {
                     fprintf(pgm, "\n");
                 }
 
-                int result = round(clust->features[c][d]);
+                int result = round(c * dim + d);
 
                 fprintf(pgm, "%3d ", result);
  
@@ -206,7 +181,7 @@ int main(int argc, char **argv) {
 
     if (argc > 3) {
         strcpy(savedir, argv[3]);
-        int status = mkdir(savedir); // maybe later do error checking       
+        int status = mkdir(savedir, S_IRUSR | S_IWUSR | S_IXUSR); // maybe later do error checking       
     }
     if (argc > 4) {
         MAXITER = atoi(argv[4]); 
@@ -246,7 +221,7 @@ int main(int argc, char **argv) {
         //reset cluster centers to 0.0
         for (int c = 0; c < clust->nclust; c++){ 
             for (int d = 0; d < clust->dim; d++){
-                clust->features[c][d] = 0.0;
+                clust->features[c * clust->dim + d] = 0.0;
             }
         }
 
@@ -254,7 +229,7 @@ int main(int argc, char **argv) {
         for (int i = 0; i < data->ndata; i++){
             int c = data->assigns[i];
             for (int d = 0; d < clust->dim; d++){
-                clust->features[c][d] += data->features[i][d];
+                clust->features[c * clust->dim + d] += data->features[i * clust->dim + d];
             }
         }
 
@@ -262,7 +237,7 @@ int main(int argc, char **argv) {
         for (int c = 0; c < clust->nclust; c++){
             if (clust->counts[c] > 0){
                 for (int d = 0; d < clust->dim; d++){
-                    clust->features[c][d] = clust->features[c][d] / clust->counts[c];
+                    clust->features[c * clust->dim + d] = clust->features[c * clust->dim + d] / clust->counts[c];
                 }
             }
         }
@@ -279,7 +254,7 @@ int main(int argc, char **argv) {
             for (int c = 0; c < clust->nclust; c++){
                 float distsq = 0.0;
                 for (int d = 0; d < clust->dim; d++){
-                    float diff = data->features[i][d] - clust->features[c][d];
+                    float diff = data->features[i * clust->dim + d] - clust->features[c  * clust->dim + d];
                     distsq += diff*diff;
                 }
                 if (distsq < best_distsq){
@@ -381,8 +356,7 @@ int main(int argc, char **argv) {
     save_pgm_files(clust, savedir);
 
     //Freeing allocated memory  
-    KMDataCleanup(data); 
-    KMClustCleanup(clust); 
+    //TODO 
 
     diff = clock() - start;
     int msec = diff * 1000 / CLOCKS_PER_SEC;
