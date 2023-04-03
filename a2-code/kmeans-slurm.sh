@@ -17,7 +17,7 @@
 # #SBATCH --mail-user=kauffman@umn.edu
 
 # ADJUST: location of executable
-cd ~/mesabi-a2-5451/
+# cd ~/mesabi-a2-5451/
 
 # set path to MPI, show path to mpirun, helps with versioning and
 # debugging in output
