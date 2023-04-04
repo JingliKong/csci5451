@@ -48,22 +48,21 @@ int main(int argc, char **argv){
     volatile int p;
 
     if (proc_id == 0) {
-            // Allocate memory 
+        // Allocate memory for collective data
         H = malloc(sizeof(double*)*max_time); 
-        
-        for(t=0;t<max_time;t++){
-            H[t] = malloc(sizeof(double)*width);
+        for(t = 0; t < max_time; t++){
+            // H[t] = malloc(sizeof(double)*width);
+            H[t] = calloc(width, sizeof(double)); 
         }
 
         // Initialize constant left/right boundary temperatures
-        for(t=0; t<max_time; t++){
+        for(t=0; t < max_time; t++){
             H[t][0] = L_bound_temp;
             H[t][width-1] = R_bound_temp;
         }
-
         // Initialize temperatures at time 0
         t=0;
-        for(p=1; p<width-1; p++){
+        for(p=1; p < width-1; p++){
             H[t][p] = initial_temp;
         }
 
@@ -72,15 +71,31 @@ int main(int argc, char **argv){
         for (int i = 1; i < cols_per_proc; i++) {
             proc_data[t][i] = initial_temp; 
         }
+        // Initialize constant left boundary temperatures
+        for(t=0; t < max_time; t++){
+            proc_data[t][0] = L_bound_temp;
+        }
     }
-    else if (proc_id == width - 1) { // we are the leftmost portion of the pipe 
-        proc_data[t][cols_per_proc - 1] = R_bound_temp; 
+
+    if (proc_id == total_procs - 1) { // we are the leftmost portion of the pipe 
+        // proc_data[t][cols_per_proc - 1] = R_bound_temp; 
+        t = 0;
         for (int i = 1; i < cols_per_proc; i++) {
             proc_data[t][i] = initial_temp; 
         }
-    }
-    else { // we are in the middle all the initial temps are just 0 
-        for (int i = 1; i < cols_per_proc; i++) {
+        // Proc n-1 initializes partition of H to starting conditions 
+        proc_data[t][0] = L_bound_temp; 
+        int i = (total_procs == 1) ? 0 : 1;
+        for (; i < cols_per_proc - 1; i++) {
+            proc_data[t][i] = initial_temp; 
+        }
+
+        // Initialize constant right boundary temperatures
+        for(t=0; t < max_time; t++){
+            proc_data[t][cols_per_proc-1] = R_bound_temp;
+        }
+    } else { // we are in the middle all the initial temps are just 0 
+        for (int i = 0; i < cols_per_proc; i++) {
             proc_data[t][i] = initial_temp; 
         }
     }
@@ -98,16 +113,18 @@ int main(int argc, char **argv){
         double recv_left, recv_right;
         double send_left, send_right; 
 
-        if (proc_id == 0) { // Leftmost processor case
+        if (total_procs <= 1) {
+            continue;
+        } else if (proc_id == 0) { // Leftmost processor case
             send_right = proc_data[t][cols_per_proc - 1];
-            MPI_Sendrecv(&send_right, 1, MPI_DOUBLE, 1, 1, // QUESTION: DOES SEND_RECV BLOCK????
+            MPI_Sendrecv(&send_right, 1, MPI_DOUBLE, 1, 1,
                           &recv_right, 1, MPI_DOUBLE, 1, 1, 
                           MPI_COMM_WORLD, MPI_STATUS_IGNORE);
 
             recv_left = proc_data[t][cols_per_proc - 2];
             proc_data[t+1][cols_per_proc - 1] = proc_data[t][cols_per_proc - 1] + -k*(2*proc_data[t][cols_per_proc - 1] - recv_left - recv_right);
     
-        } else if(proc_id == (width - 1)) { // Rightmost processor case
+        } else if ((proc_id == (total_procs - 1))) { // Rightmost processor case
             send_left = proc_data[t][0];
             MPI_Sendrecv(&send_left, 1, MPI_DOUBLE, proc_id - 1, 1,
                           &recv_left, 1, MPI_DOUBLE, proc_id - 1, 1, 
@@ -119,14 +136,27 @@ int main(int argc, char **argv){
         } else { // Middle processor case 
             // We need 2 MPI_Sendrecv one to the proc to the right and one to the left 
             // sending my right most element to the recv_left because we are sending 
-            send_right = proc_data[t][cols_per_proc - 1];
-            MPI_Sendrecv(&send_right, 1, MPI_DOUBLE, proc_id + 1, 1, 
-                        &recv_right, 1, MPI_DOUBLE, proc_id + 1, 1,
-                        MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-                        
-            MPI_Sendrecv(&proc_data[t][0], 1, MPI_DOUBLE, proc_id - 1, 1,
-                        &recv_left, 1, MPI_DOUBLE, proc_id - 1, 1, 
-                        MPI_COMM_WORLD, MPI_STATUS_IGNORE); 
+
+            if (proc_id % 2 == 0) {
+                send_right = proc_data[t][cols_per_proc - 1];
+                MPI_Sendrecv(&send_right, 1, MPI_DOUBLE, proc_id + 1, 1, 
+                            &recv_right, 1, MPI_DOUBLE, proc_id + 1, 1,
+                            MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+                send_left = proc_data[t][0];               
+                MPI_Sendrecv(&send_left, 1, MPI_DOUBLE, proc_id - 1, 1,
+                            &recv_left, 1, MPI_DOUBLE, proc_id - 1, 1, 
+                            MPI_COMM_WORLD, MPI_STATUS_IGNORE); 
+            } else {
+                send_left = proc_data[t][0];               
+                MPI_Sendrecv(&send_left, 1, MPI_DOUBLE, proc_id - 1, 1,
+                            &recv_left, 1, MPI_DOUBLE, proc_id - 1, 1, 
+                            MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+                send_right = proc_data[t][cols_per_proc - 1];
+                MPI_Sendrecv(&send_right, 1, MPI_DOUBLE, proc_id + 1, 1, 
+                            &recv_right, 1, MPI_DOUBLE, proc_id + 1, 1,
+                            MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+            }
+
 
             // Then we just calculate the ends of our local array using the values we just recieved 
             // calculating the end 
@@ -174,6 +204,7 @@ int main(int argc, char **argv){
 
     // Clean up and deallocation
     for(t=0; t<max_time; t++){
+        printf("%x ------ %x\n", H[t], proc_data[t]);
         if (proc_id == 0) {
             free(H[t]);
         }
