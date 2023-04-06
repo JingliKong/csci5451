@@ -1,8 +1,8 @@
-==2538089== Memcheck, a memory error detector
-==2538089== Copyright (C) 2002-2017, and GNU GPL'd, by Julian Seward et al.
-==2538089== Using Valgrind-3.15.0 and LibVEX; rerun with -h for copyright info
-==2538089== Command: ./heat_mpi 10 20 1
-==2538089== 
+==2540985== Memcheck, a memory error detector
+==2540985== Copyright (C) 2002-2017, and GNU GPL'd, by Julian Seward et al.
+==2540985== Using Valgrind-3.15.0 and LibVEX; rerun with -h for copyright info
+==2540985== Command: ./heat_mpi 10 20 1
+==2540985== 
    |     0     1     2     3     4     5     6     7     8     9    10    11    12    13    14    15    16    17    18    19 
 ---+-------------------------------------------------------------------------------------------------------------------------
   0|  20.0  50.0  50.0  50.0  50.0  50.0  50.0  50.0  50.0  50.0  50.0  50.0  50.0  50.0  50.0  50.0  50.0  50.0  50.0  10.0 
@@ -15,17 +15,17 @@
   7|  20.0  28.2  36.4  41.3  46.2  47.9  49.5  49.8  50.0  50.0  50.0  50.0  49.7  49.4  47.2  45.0  38.4  31.9  20.9  10.0 
   8|  20.0  28.2  34.8  41.3  44.6  47.9  48.8  49.8  49.9  50.0  50.0  49.8  49.7  48.4  47.2  42.8  38.4  29.7  20.9  10.0 
   9|  20.0  27.4  34.8  39.7  44.6  46.7  48.8  49.4  49.9  49.9  49.9  49.8  49.1  48.4  45.6  42.8  36.2  29.7  19.8  10.0 
-==2538089== 
-==2538089== HEAP SUMMARY:
-==2538089==     in use at exit: 10,524 bytes in 49 blocks
-==2538089==   total heap usage: 23,653 allocs, 23,604 frees, 4,666,078 bytes allocated
-==2538089== 
-==2538089== LEAK SUMMARY:
-==2538089==    definitely lost: 0 bytes in 0 blocks
-==2538089==    indirectly lost: 0 bytes in 0 blocks
-==2538089==      possibly lost: 0 bytes in 0 blocks
-==2538089==    still reachable: 0 bytes in 0 blocks
-==2538089==         suppressed: 10,524 bytes in 49 blocks
-==2538089== 
-==2538089== For lists of detected and suppressed errors, rerun with: -s
-==2538089== ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 21 from 21)
+==2540985== 
+==2540985== HEAP SUMMARY:
+==2540985==     in use at exit: 10,524 bytes in 49 blocks
+==2540985==   total heap usage: 23,653 allocs, 23,604 frees, 4,666,042 bytes allocated
+==2540985== 
+==2540985== LEAK SUMMARY:
+==2540985==    definitely lost: 0 bytes in 0 blocks
+==2540985==    indirectly lost: 0 bytes in 0 blocks
+==2540985==      possibly lost: 0 bytes in 0 blocks
+==2540985==    still reachable: 0 bytes in 0 blocks
+==2540985==         suppressed: 10,524 bytes in 49 blocks
+==2540985== 
+==2540985== For lists of detected and suppressed errors, rerun with: -s
+==2540985== ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 21 from 21)

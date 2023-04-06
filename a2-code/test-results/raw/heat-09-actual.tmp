@@ -1,76 +1,76 @@
-==2538399== Memcheck, a memory error detector
-==2538399== Copyright (C) 2002-2017, and GNU GPL'd, by Julian Seward et al.
-==2538399== Using Valgrind-3.15.0 and LibVEX; rerun with -h for copyright info
-==2538399== Command: ./heat_mpi 10 20 0
-==2538399== 
-==2538400== Memcheck, a memory error detector
-==2538400== Copyright (C) 2002-2017, and GNU GPL'd, by Julian Seward et al.
-==2538400== Using Valgrind-3.15.0 and LibVEX; rerun with -h for copyright info
-==2538400== Command: ./heat_mpi 10 20 0
-==2538400== 
-==2538401== Memcheck, a memory error detector
-==2538401== Copyright (C) 2002-2017, and GNU GPL'd, by Julian Seward et al.
-==2538401== Using Valgrind-3.15.0 and LibVEX; rerun with -h for copyright info
-==2538401== Command: ./heat_mpi 10 20 0
-==2538401== 
-==2538402== Memcheck, a memory error detector
-==2538402== Copyright (C) 2002-2017, and GNU GPL'd, by Julian Seward et al.
-==2538402== Using Valgrind-3.15.0 and LibVEX; rerun with -h for copyright info
-==2538402== Command: ./heat_mpi 10 20 0
-==2538402== 
-==2538400== 
-==2538400== HEAP SUMMARY:
-==2538400==     in use at exit: 23,697 bytes in 77 blocks
-==2538400==   total heap usage: 24,143 allocs, 24,066 frees, 4,807,678 bytes allocated
-==2538400== 
-==2538402== 
-==2538402== HEAP SUMMARY:
-==2538402==     in use at exit: 23,697 bytes in 77 blocks
-==2538402==   total heap usage: 24,132 allocs, 24,055 frees, 4,823,701 bytes allocated
-==2538402== 
-==2538399== 
-==2538399== HEAP SUMMARY:
-==2538399==     in use at exit: 23,661 bytes in 75 blocks
-==2538399==   total heap usage: 24,148 allocs, 24,073 frees, 4,867,776 bytes allocated
-==2538399== 
-==2538401== 
-==2538401== HEAP SUMMARY:
-==2538401==     in use at exit: 23,697 bytes in 77 blocks
-==2538401==   total heap usage: 24,144 allocs, 24,067 frees, 4,824,126 bytes allocated
-==2538401== 
-==2538400== LEAK SUMMARY:
-==2538400==    definitely lost: 0 bytes in 0 blocks
-==2538400==    indirectly lost: 0 bytes in 0 blocks
-==2538400==      possibly lost: 0 bytes in 0 blocks
-==2538400==    still reachable: 0 bytes in 0 blocks
-==2538400==         suppressed: 23,697 bytes in 77 blocks
-==2538400== 
-==2538400== For lists of detected and suppressed errors, rerun with: -s
-==2538400== ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 27 from 27)
-==2538399== LEAK SUMMARY:
-==2538399==    definitely lost: 0 bytes in 0 blocks
-==2538399==    indirectly lost: 0 bytes in 0 blocks
-==2538399==      possibly lost: 0 bytes in 0 blocks
-==2538399==    still reachable: 0 bytes in 0 blocks
-==2538399==         suppressed: 23,661 bytes in 75 blocks
-==2538399== 
-==2538399== For lists of detected and suppressed errors, rerun with: -s
-==2538399== ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 26 from 26)
-==2538402== LEAK SUMMARY:
-==2538402==    definitely lost: 0 bytes in 0 blocks
-==2538402==    indirectly lost: 0 bytes in 0 blocks
-==2538402==      possibly lost: 0 bytes in 0 blocks
-==2538402==    still reachable: 0 bytes in 0 blocks
-==2538402==         suppressed: 23,697 bytes in 77 blocks
-==2538402== 
-==2538402== For lists of detected and suppressed errors, rerun with: -s
-==2538402== ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 28 from 28)
-==2538401== LEAK SUMMARY:
-==2538401==    definitely lost: 0 bytes in 0 blocks
-==2538401==    indirectly lost: 0 bytes in 0 blocks
-==2538401==      possibly lost: 0 bytes in 0 blocks
-==2538401==    still reachable: 0 bytes in 0 blocks
-==2538401==         suppressed: 23,697 bytes in 77 blocks
-==2538401== 
-==2538401== For lists of detected and suppressed errors, rerun with: -s
-==2538401== ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 27 from 27)
+==2541316== Memcheck, a memory error detector
+==2541316== Copyright (C) 2002-2017, and GNU GPL'd, by Julian Seward et al.
+==2541316== Using Valgrind-3.15.0 and LibVEX; rerun with -h for copyright info
+==2541316== Command: ./heat_mpi 10 20 0
+==2541316== 
+==2541317== Memcheck, a memory error detector
+==2541317== Copyright (C) 2002-2017, and GNU GPL'd, by Julian Seward et al.
+==2541317== Using Valgrind-3.15.0 and LibVEX; rerun with -h for copyright info
+==2541317== Command: ./heat_mpi 10 20 0
+==2541317== 
+==2541318== Memcheck, a memory error detector
+==2541318== Copyright (C) 2002-2017, and GNU GPL'd, by Julian Seward et al.
+==2541318== Using Valgrind-3.15.0 and LibVEX; rerun with -h for copyright info
+==2541318== Command: ./heat_mpi 10 20 0
+==2541318== 
+==2541319== Memcheck, a memory error detector
+==2541319== Copyright (C) 2002-2017, and GNU GPL'd, by Julian Seward et al.
+==2541319== Using Valgrind-3.15.0 and LibVEX; rerun with -h for copyright info
+==2541319== Command: ./heat_mpi 10 20 0
+==2541319== 
+==2541318== 
+==2541318== HEAP SUMMARY:
+==2541318==     in use at exit: 23,697 bytes in 77 blocks
+==2541318==   total heap usage: 24,133 allocs, 24,056 frees, 4,823,817 bytes allocated
+==2541318== 
+==2541318== LEAK SUMMARY:
+==2541318==    definitely lost: 0 bytes in 0 blocks
+==2541318==    indirectly lost: 0 bytes in 0 blocks
+==2541318==      possibly lost: 0 bytes in 0 blocks
+==2541318==    still reachable: 0 bytes in 0 blocks
+==2541318==         suppressed: 23,697 bytes in 77 blocks
+==2541318== 
+==2541318== For lists of detected and suppressed errors, rerun with: -s
+==2541318== ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 28 from 28)
+==2541316== 
+==2541316== HEAP SUMMARY:
+==2541316==     in use at exit: 23,661 bytes in 75 blocks
+==2541316==   total heap usage: 24,148 allocs, 24,073 frees, 4,867,724 bytes allocated
+==2541316== 
+==2541316== LEAK SUMMARY:
+==2541316==    definitely lost: 0 bytes in 0 blocks
+==2541316==    indirectly lost: 0 bytes in 0 blocks
+==2541316==      possibly lost: 0 bytes in 0 blocks
+==2541316==    still reachable: 0 bytes in 0 blocks
+==2541316==         suppressed: 23,661 bytes in 75 blocks
+==2541316== 
+==2541316== For lists of detected and suppressed errors, rerun with: -s
+==2541316== ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 27 from 27)
+==2541319== 
+==2541319== HEAP SUMMARY:
+==2541319==     in use at exit: 23,697 bytes in 77 blocks
+==2541319==   total heap usage: 24,143 allocs, 24,066 frees, 4,823,906 bytes allocated
+==2541319== 
+==2541319== LEAK SUMMARY:
+==2541319==    definitely lost: 0 bytes in 0 blocks
+==2541319==    indirectly lost: 0 bytes in 0 blocks
+==2541319==      possibly lost: 0 bytes in 0 blocks
+==2541319==    still reachable: 0 bytes in 0 blocks
+==2541319==         suppressed: 23,697 bytes in 77 blocks
+==2541319== 
+==2541319== For lists of detected and suppressed errors, rerun with: -s
+==2541319== ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 28 from 28)
+==2541317== 
+==2541317== HEAP SUMMARY:
+==2541317==     in use at exit: 23,697 bytes in 77 blocks
+==2541317==   total heap usage: 24,132 allocs, 24,055 frees, 4,807,369 bytes allocated
+==2541317== 
+==2541317== LEAK SUMMARY:
+==2541317==    definitely lost: 0 bytes in 0 blocks
+==2541317==    indirectly lost: 0 bytes in 0 blocks
+==2541317==      possibly lost: 0 bytes in 0 blocks
+==2541317==    still reachable: 0 bytes in 0 blocks
+==2541317==         suppressed: 23,697 bytes in 77 blocks
+==2541317== 
+==2541317== For lists of detected and suppressed errors, rerun with: -s
+==2541317== ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 28 from 28)
