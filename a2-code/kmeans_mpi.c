@@ -123,7 +123,7 @@ int main(int argc, char **argv) {
     // At this point everyone should have their own feature array to work on so I can start the main algorithm 
     // Main Algorithm
     int curiter = 1; 
-    int nchanges = localKMData->ndata; 
+    int nchanges = global_data->ndata; 
     if (proc_id == root_processor) {
         printf("==CLUSTERING: MAXITER %d==\n", MAXITER);
         printf("ITER NCHANGE CLUST_COUNTS\n");
