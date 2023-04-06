@@ -29,3 +29,4 @@ LABEL \ CLUST
 TOT    9   14    9    7   10    4   14   16    8    9  100
 
 Saving cluster labels to file test-results/outdir2/labels.txt
+Saving cluster centers to test-results/outdir2/cent_0000.pgm ...

@@ -1,0 +1,50 @@
+==3821859== Memcheck, a memory error detector
+==3821859== Copyright (C) 2002-2017, and GNU GPL'd, by Julian Seward et al.
+==3821859== Using Valgrind-3.15.0 and LibVEX; rerun with -h for copyright info
+==3821859== Command: ./heat_mpi 10 20 1
+==3821859== 
+==3821860== Memcheck, a memory error detector
+==3821860== Copyright (C) 2002-2017, and GNU GPL'd, by Julian Seward et al.
+==3821860== Using Valgrind-3.15.0 and LibVEX; rerun with -h for copyright info
+==3821860== Command: ./heat_mpi 10 20 1
+==3821860== 
+   |     0     1     2     3     4     5     6     7     8     9    10    11    12    13    14    15    16    17    18    19 
+---+-------------------------------------------------------------------------------------------------------------------------
+  0|  20.0  50.0  50.0  50.0  50.0  50.0  50.0  50.0  50.0  50.0  50.0  50.0  50.0  50.0  50.0  50.0  50.0  50.0  50.0  10.0 
+  1|  20.0  35.0  50.0  50.0  50.0  50.0  50.0  50.0  50.0  50.0  50.0  50.0  50.0  50.0  50.0  50.0  50.0  50.0  30.0  10.0 
+  2|  20.0  35.0  42.5  50.0  50.0  50.0  50.0  50.0  50.0  50.0  50.0  50.0  50.0  50.0  50.0  50.0  50.0  40.0  30.0  10.0 
+  3|  20.0  31.2  42.5  46.2  50.0  50.0  50.0  50.0  50.0  50.0  50.0  50.0  50.0  50.0  50.0  50.0  45.0  40.0  25.0  10.0 
+  4|  20.0  31.2  38.8  46.2  48.1  50.0  50.0  50.0  50.0  50.0  50.0  50.0  50.0  50.0  50.0  47.5  45.0  35.0  25.0  10.0 
+  5|  20.0  29.4  38.8  43.4  48.1  49.1  50.0  50.0  50.0  50.0  50.0  50.0  50.0  50.0  48.8  47.5  41.2  35.0  22.5  10.0 
+  6|  20.0  29.4  36.4  43.4  46.2  49.1  49.5  50.0  50.0  50.0  50.0  50.0  50.0  49.4  48.8  45.0  41.2  31.9  22.5  10.0 
+  7|  20.0  28.2  36.4  41.3  46.2  47.9  49.5  49.8  50.0  50.0  50.0  50.0  49.7  49.4  47.2  45.0  38.4  31.9  20.9  10.0 
+  8|  20.0  28.2  34.8  41.3  44.6  47.9  48.8  49.8  49.9  50.0  50.0  49.8  49.7  48.4  47.2  42.8  38.4  29.7  20.9  10.0 
+  9|  20.0  27.4  34.8  39.7  44.6  46.7  48.8  49.4  49.9  49.9  49.9  49.8  49.1  48.4  45.6  42.8  36.2  29.7  19.8  10.0 
+==3821859== 
+==3821859== HEAP SUMMARY:
+==3821859==     in use at exit: 14,935 bytes in 59 blocks
+==3821859==   total heap usage: 23,892 allocs, 23,833 frees, 4,828,189 bytes allocated
+==3821859== 
+==3821860== 
+==3821860== HEAP SUMMARY:
+==3821860==     in use at exit: 14,971 bytes in 61 blocks
+==3821860==   total heap usage: 23,866 allocs, 23,805 frees, 4,767,745 bytes allocated
+==3821860== 
+==3821860== LEAK SUMMARY:
+==3821860==    definitely lost: 0 bytes in 0 blocks
+==3821860==    indirectly lost: 0 bytes in 0 blocks
+==3821860==      possibly lost: 0 bytes in 0 blocks
+==3821860==    still reachable: 0 bytes in 0 blocks
+==3821860==         suppressed: 14,971 bytes in 61 blocks
+==3821860== 
+==3821860== For lists of detected and suppressed errors, rerun with: -s
+==3821860== ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 28 from 28)
+==3821859== LEAK SUMMARY:
+==3821859==    definitely lost: 0 bytes in 0 blocks
+==3821859==    indirectly lost: 0 bytes in 0 blocks
+==3821859==      possibly lost: 0 bytes in 0 blocks
+==3821859==    still reachable: 0 bytes in 0 blocks
+==3821859==         suppressed: 14,935 bytes in 59 blocks
+==3821859== 
+==3821859== For lists of detected and suppressed errors, rerun with: -s
+==3821859== ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 27 from 27)
