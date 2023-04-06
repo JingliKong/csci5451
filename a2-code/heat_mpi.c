@@ -149,7 +149,7 @@ int main(int argc, char **argv){
             double left = PROC_GET(proc_data, cols_per_proc, t, cols_per_proc - 2);
             double delta = -k*(2*send_right - left - recv_right);
             // PROC_SET(proc_data, cols_per_proc, t+1, cols_per_proc-1, send_right + delta);
-            proc_data[(t+1) * cols_per_proc + cols_per_proc-1] = send_right+delta;
+            proc_data[(t+1) * cols_per_proc + (cols_per_proc-1)] = send_right+delta;
     
         } else if ((proc_id == (total_procs - 1))) { // Rightmost processor case
             send_left = PROC_GET(proc_data, cols_per_proc, t, 0);
@@ -201,52 +201,20 @@ int main(int argc, char **argv){
             left_diff = right - PROC_GET(proc_data, cols_per_proc, t, cols_per_proc - 2);
             right_diff =  right - recv_right; 
             delta = -k*( left_diff + right_diff );
-            PROC_SET(proc_data, cols_per_proc, t+1, cols_per_proc - 1, send_right + delta);  
+            // PROC_SET(proc_data, cols_per_proc, t+1, cols_per_proc - 1, send_right + delta);  
             proc_data[(t+1) * cols_per_proc + (cols_per_proc-1)] = send_right+delta;
         }
     }
 
+    // Gather local data and store into corresponding section of 1D array
     for (int i = 0; i < max_time; i++){
-        // printf("addra: %x\n", proc_data);
-        // printf("addrb: %x\n", proc_data + (i*cols_per_proc));
-        //  printf("addrb: %x\n", &proc_data[0]);
-        // printf("access: %x\n", (proc_data + (i*cols_per_proc))[0]);
-        // printf("%d\n", proc_id);
-
-        // MPI_Gather(proc_data + (i*cols_per_proc), cols_per_proc, MPI_DOUBLE,
-        //             H[i], cols_per_proc, MPI_DOUBLE, 
-        //             root_processor, MPI_COMM_WORLD);
-
-        MPI_Gather(&proc_data[i*cols_per_proc], cols_per_proc, MPI_DOUBLE,
+         MPI_Gather(&proc_data[i*cols_per_proc], cols_per_proc, MPI_DOUBLE,
                     &H[i*width], cols_per_proc, MPI_DOUBLE, 
                     root_processor, MPI_COMM_WORLD);
     }
 
-    // printf("YEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE\n");
 
-    // Print the results
-    // if((proc_id == 0) && print){
-    //     // Column headers
-    //     printf("%3s| ","");
-    //     for(int p=0; p<width; p++){
-    //         printf("%5d ",p);
-    //     }
-    //     printf("\n");
-    //     printf("%3s+-","---");
-    //     for(int p=0; p<width; p++){
-    //         printf("------");
-    //     }
-    //     printf("\n");
-    //         // Row headers and data
-    //         for(int t=0; t<max_time; t++){
-    //             printf("%3d| ",t);
-    //             for(int p=0; p<width; p++){
-    //             printf("%5.1f ",H[t][p]); // check value of p
-    //             }
-    //             printf("\n");
-    //         }
-    // }
-
+    // Print out the temperatures
     if((proc_id == 0) && print){
         // Column headers
         printf("%3s| ","");
@@ -270,14 +238,10 @@ int main(int argc, char **argv){
             }
     }
 
+    // Clean up and deallocation
 
     free(proc_data);
-
-    // Clean up and deallocation
     if (proc_id == 0){
-        // for (int i = 0; i < max_time; i++){
-        //     // free(H[i]);
-        // }
         free(H);
     }
 
