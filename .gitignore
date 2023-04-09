@@ -1,1 +1,6 @@
 a2-code/test-results/
+*.o
+heat_mpi
+heat_serial
+kmeans_serial
+mpi_hello
