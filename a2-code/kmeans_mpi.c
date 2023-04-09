@@ -129,14 +129,6 @@ int main(int argc, char** argv) {
     local_assigns[i] = c;
   }
 
-  // now everyone calls scatter. The root sends the data each proc receives some
-  // rows of features
-  // for (int i = 0; i < local_ndata; i++) {
-	// 	for (int j = 0; j < dim; j++) {
-	// 		printf("%f ", global_data->features[i *dim + j]);
-	// 	}
-	// 	printf("\n");
-	// }
   MPI_Scatterv(global_data->features, feature_counts, feature_displ, MPI_FLOAT,
                local_features, feature_counts[proc_id], MPI_FLOAT, root_proc,
                MPI_COMM_WORLD);
@@ -189,14 +181,12 @@ int main(int argc, char** argv) {
       }
     }
     // sum up data in each cluster
-    for (int i = 0; i < local_ndata; i++) {
-      int c = local_assigns[i];
-      for (int d = 0; d < local_clust->dim; d++) {
-        local_clust->features[c * local_clust->dim + d] =
-            local_clust->features[c * local_clust->dim + d] /
-            local_clust->counts[c];
-      }
-    }
+		for (int i = 0; i < local_features; i++){
+				int c = local_assigns[i];
+				for (int d = 0; d < local_clust->dim; d++){
+						local_clust->features[c * local_clust->dim + d] += local_features[i * local_clust->dim + d]; 
+				}
+		}
     /*
     At this point after every proc performs its local sum we need to do an
     all-to-all reduce to synchronize all the local clust.
@@ -277,7 +267,7 @@ int main(int argc, char** argv) {
     // Now from the root proc I can print out the current iteration information
     if (proc_id == root_proc) {
       printf("%3d: %5d |", curiter, nchanges);
-      for (int c = 0; c < nclust; c++) {
+      for (int c = 0; c < nclust; c++) { 
         printf(" %4d", local_clust->counts[c]);
       }
 			printf("\n");
