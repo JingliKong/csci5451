@@ -56,8 +56,7 @@ int main(int argc, char** argv) {
   char* datafile = argv[1];
   int nclust = atoi(argv[2]);
   char* savedir = malloc(
-      strlen(argv[3]) +
-      1);  // Allocating enough space for the dir len + 1 for null terminator?
+      strlen(argv[3]) + 1);  // Allocating enough space for the dir len + 1 for null terminator?
 
   int MAXITER = 100;
   if (argc > 3) {
@@ -67,9 +66,7 @@ int main(int argc, char** argv) {
   if (argc > 4) {
     MAXITER = atoi(argv[4]);
   }
-  printf("datafile: %s\n", datafile);
-  printf("nclust: %d\n", nclust);
-  printf("savedir: %s\n", savedir);
+
 
   MPI_Init(&argc, &argv);
   int proc_id, total_procs;
@@ -82,6 +79,9 @@ int main(int argc, char** argv) {
   KMData* global_data = NULL;
 
   if (proc_id == root_proc) {
+		printf("datafile: %s\n", datafile);
+  	printf("nclust: %d\n", nclust);
+  	printf("savedir: %s\n", savedir);
     // only the root will read in the file into global_data
     // then we have to broadcast ndata and dim
     global_data = kmdata_load(datafile);
