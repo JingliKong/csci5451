@@ -180,8 +180,9 @@ int main(int argc, char** argv) {
         local_clust->features[c * local_clust->dim + d] = 0.0;
       }
     }
+		
     // sum up data in each cluster
-		for (int i = 0; i < local_features; i++){
+		for (int i = 0; i < local_ndata; i++){
 				int c = local_assigns[i];
 				for (int d = 0; d < local_clust->dim; d++){
 						local_clust->features[c * local_clust->dim + d] += local_features[i * local_clust->dim + d]; 
@@ -198,7 +199,7 @@ int main(int argc, char** argv) {
     MPI_Allreduce(local_clust->features, recv_features,
                   local_clust->nclust * local_clust->dim, MPI_FLOAT, MPI_SUM,
                   MPI_COMM_WORLD);
-
+		
     // copying features back into local clust
     memcpy(local_clust->features, recv_features,
            sizeof(float) * local_clust->dim * local_clust->nclust);
