@@ -1,1 +1,3 @@
 a2-code/test-results/
+*.o
+a2-code/heat-slurm.sh
