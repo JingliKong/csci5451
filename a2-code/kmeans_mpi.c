@@ -231,7 +231,7 @@ int main(int argc, char** argv) {
   }
 
   while ((nchanges > 0) && (curiter <= MAXITER)) {
-    printf("start here p:%d iter:%d\n", proc_id, curiter);
+    // printf("start here p:%d iter:%d\n", proc_id, curiter);
     // DETERMINE NEW CLUSTER CENTERS
     // reset cluster centers to 0.0
     for (int c = 0; c < local_clust->nclust;
@@ -367,8 +367,6 @@ int main(int argc, char** argv) {
       if (best_clust != local_assigns[i]) {
         nchanges += 1;  // note I am updating my local_nchanges instead of nchanges
         local_assigns[i] = best_clust;
-				MPI_Allreduce(&nchanges, &nchanges, 1, MPI_INT, MPI_SUM,
-							MPI_COMM_WORLD);
 				
       }
 			// for (int i = 0; i < local_clust->nclust; i++) { //DEBUG
@@ -379,7 +377,8 @@ int main(int argc, char** argv) {
     }
 		// printf("proc_id: %d\n", proc_id);
 		// printf("%d nchanges before: %d\n", proc_id, nchanges); //DEBUG
-
+    MPI_Allreduce(&nchanges, &nchanges, 1, MPI_INT, MPI_SUM,
+                  MPI_COMM_WORLD);
 		// printf("%d nchanges before: %d\n", proc_id, nchanges); //DEBUG
     // space to reduce cluster counts in each proc
     float recv_counts[local_clust->nclust];
@@ -401,7 +400,16 @@ int main(int argc, char** argv) {
 		// printf("proc_id: %d local_nchanges: %d\n", proc_id, local_nchanges); //DEBUG
 		// printf("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"); //DEBUG
     // Now from the root proc I can print out the current iteration information
-
+				if (proc_id != root_proc) {
+			MPI_Gather(local_features, local_ndata * local_clust->dim, MPI_FLOAT,
+						NULL, local_ndata * local_clust->dim, MPI_FLOAT,
+						root_proc, MPI_COMM_WORLD);
+		}
+		else {
+					MPI_Gather(local_features, local_ndata * local_clust->dim, MPI_FLOAT,
+										global_data->features, local_ndata * local_clust->dim, MPI_FLOAT,
+										root_proc, MPI_COMM_WORLD);
+		}
     if (proc_id == root_proc) {
 			printf("%3d: %5d |", curiter, nchanges);
       for (int c = 0; c < nclust; c++) { 
@@ -418,16 +426,16 @@ int main(int argc, char** argv) {
     // do an all-to-one we can use a gather to get everyone's local features
     // back into the global_data struct everyone sends data back to root proc
 
-		if (proc_id != root_proc) {
-			MPI_Gather(local_features, local_ndata * local_clust->dim, MPI_FLOAT,
-						NULL, local_ndata * local_clust->dim, MPI_FLOAT,
-						root_proc, MPI_COMM_WORLD);
-		}
-		else {
-					MPI_Gather(local_features, local_ndata * local_clust->dim, MPI_FLOAT,
-										global_data->features, local_ndata * local_clust->dim, MPI_FLOAT,
-										root_proc, MPI_COMM_WORLD);
-		}
+		// if (proc_id != root_proc) {
+		// 	MPI_Gather(local_features, local_ndata * local_clust->dim, MPI_FLOAT,
+		// 				NULL, local_ndata * local_clust->dim, MPI_FLOAT,
+		// 				root_proc, MPI_COMM_WORLD);
+		// }
+		// else {
+		// 			MPI_Gather(local_features, local_ndata * local_clust->dim, MPI_FLOAT,
+		// 								global_data->features, local_ndata * local_clust->dim, MPI_FLOAT,
+		// 								root_proc, MPI_COMM_WORLD);
+		// }
 		
     // we also need to gather the local_assigns back to the root
 		if (proc_id == root_proc) {
