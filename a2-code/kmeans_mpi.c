@@ -367,6 +367,8 @@ int main(int argc, char** argv) {
       if (best_clust != local_assigns[i]) {
         nchanges += 1;  // note I am updating my local_nchanges instead of nchanges
         local_assigns[i] = best_clust;
+				MPI_Allreduce(&nchanges, &nchanges, 1, MPI_INT, MPI_SUM,
+							MPI_COMM_WORLD);
 				
       }
 			// for (int i = 0; i < local_clust->nclust; i++) { //DEBUG
@@ -377,8 +379,7 @@ int main(int argc, char** argv) {
     }
 		// printf("proc_id: %d\n", proc_id);
 		// printf("%d nchanges before: %d\n", proc_id, nchanges); //DEBUG
-    MPI_Allreduce(&nchanges, &nchanges, 1, MPI_INT, MPI_SUM,
-                  MPI_COMM_WORLD);
+
 		// printf("%d nchanges before: %d\n", proc_id, nchanges); //DEBUG
     // space to reduce cluster counts in each proc
     float recv_counts[local_clust->nclust];
