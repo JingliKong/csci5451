@@ -10,13 +10,27 @@
 #include <sys/types.h>
 #include <time.h>  // for comparing time with python version
 #include <unistd.h>
+// mpirun -np 1 kmeans_mpi mnist-data/digits_all_1e1.txt 10 outdir1
+
+void here() { // just for DEBUG
+	printf("HERE!!!!!!!!!!!!!!!!\n"); // DEBUG
+}
 
 void helper_print(float* arr, int num_row, int num_col) {
 	// for (int i = 0; i < num_row; i++) {
 		for (int j = 0; j < num_col; j++) {
+<<<<<<< HEAD
 			printf("%.0f ", arr[(0) * num_col + j]);
 		// }
 		// printf("------------------------------------------------------------------------------\n");
+=======
+			float e = arr[i * num_col + j]; 
+			if (e != 0.0) {
+				printf("%.0f ", arr[i * num_col + j]);
+			}
+		}
+		printf("------------------------------------------------------------------------------\n");
+>>>>>>> 162304876ac7c143a0f86d53fbf0cd4afa5d1567
 	}
   printf("\n------------------\n");
   return;
@@ -85,7 +99,11 @@ int main(int argc, char** argv) {
 
   int root_proc = 0;
   // everyone gets broadcasted dim and ndata to initialize their own clusters
-  int ndata, dim;
+  // int ndata = 0; 
+	// int dim = 0;
+
+	int ndata, dim;
+
   KMData* global_data = NULL;
 
   if (proc_id == root_proc) {
@@ -100,19 +118,27 @@ int main(int argc, char** argv) {
     // Broadcasting ndata and dimensions to other procs
     ndata = global_data->ndata;
     dim = global_data->dim;
-    MPI_Bcast(&ndata, 1, MPI_INT, root_proc, MPI_COMM_WORLD);
-    MPI_Bcast(&dim, 1, MPI_INT, root_proc, MPI_COMM_WORLD);
-  }
+    
+    
+  } 
+	MPI_Bcast(&ndata, 1, MPI_INT, root_proc, MPI_COMM_WORLD);
+	MPI_Bcast(&dim, 1, MPI_INT, root_proc, MPI_COMM_WORLD);
+	// else {
+	// 	MPI_Barrier(MPI_COMM_WORLD);
+	// }
   // everyone initializes data required for scatter
   int* feature_counts = calloc(total_procs, sizeof(int));
   int* feature_displ = calloc(total_procs, sizeof(int));
-  int features_per_proc = ndata*dim / total_procs;
-  int feature_surplus = ndata*dim % total_procs;
+  int features_per_proc = ndata / total_procs;
+  int feature_surplus = ndata % total_procs;
   for (int i = 0; i < total_procs; i++) {
     feature_counts[i] = (i < feature_surplus) ? features_per_proc + 1 : features_per_proc;
     feature_displ[i] = (i == 0) ? 0 : feature_displ[i - 1] + feature_counts[i - 1]; 
   }
-
+	for (int i = 0; i < total_procs; i++) { // need to multiply the #rows by #cols to know how many elements each proc gets
+		feature_counts[i] = feature_counts[i] * dim;
+		feature_displ[i] = feature_displ[i] * dim; 
+	}
   /*
   everyone gets:
   1) their own feature array holding only the rows of features assigned to them
@@ -122,50 +148,87 @@ int main(int argc, char** argv) {
   their own features each cluster keeps track of their own features and counts
   */
   // the number of rows of features each proc get is stored in feature_counts
-  int local_ndata = feature_counts[proc_id];
+  int local_ndata = feature_counts[proc_id] / dim;
+	
   float* local_features = calloc(local_ndata*dim, sizeof(float));
   // we can allocate our local assigns array to keep track of where out
   // algorithm decides where each row should be assigned
   int* local_assigns = calloc(local_ndata, sizeof(int));
-  for (int i = 0; i < local_ndata; i++) {
-    // remember we can use the proc_id to know which rows of the larger feature
-    // array we get and c is calculated the same as the serial version doing the  following
-    int c = proc_id * dim + i;
-    // now we just keep track of where are feature is assigned in our local array
-    local_assigns[i] = c;
-  }
-	printf("features_count[0]: %d\n", feature_counts[root_proc]); // DEBUG 
-	printf("features_displ[0]: %d\n", feature_displ[root_proc]); // DEBUG
+  // for (int i = 0; i < local_ndata; i++) {
+  //   // remember we can use the proc_id to know which rows of the larger feature
+  //   // array we get and c is calculated the same as the serial version doing the  following
+  //   int c = proc_id * dim + i;
+  //   // now we just keep track of where are feature is assigned in our local array
+  //   local_assigns[i] = c;
+  // }
+	// printf("nclust %d\n", nclust); //DEBUG
+	// for (int i = 0; i<local_ndata;i++){//DEBUG
+	// 	printf("%d ", local_assigns[i]);
+	// }
+
+	// printf("features_count[0]: %d\n", feature_counts[root_proc]); // DEBUG 
+	// printf("features_displ[0]: %d\n", feature_displ[root_proc]); // DEBUG
+	// printf("local_ndata[0]: %d\n", local_ndata); // DEBUG
 	// helper_print(global_data->features, global_data->ndata, global_data->dim); // DEBUG
 	// helper_print(local_features, local_ndata, dim); // DEBUG
+<<<<<<< HEAD
   MPI_Scatterv(global_data->features, feature_counts, feature_displ, MPI_FLOAT,
+=======
+	printf("Proc id: %d\n", proc_id);  // DEBUG
+	for (int i = 0; i < total_procs; i++) { // DEBUG
+		// printf("%d feature_counts[%d]: %d\n", i, i, feature_counts[i]);
+	}
+		for (int i = 0; i < total_procs; i++) { // DEBUG
+		// printf("%d feature_displ[%d]: %d\n", i, i, feature_displ[i]);
+	}
+	printf("local_ndata %d\n", local_ndata); //DEBUG
+	if (proc_id != root_proc) {
+		  MPI_Scatterv(NULL, feature_counts, feature_displ, MPI_FLOAT,
                local_features, feature_counts[proc_id], MPI_FLOAT, root_proc,
                MPI_COMM_WORLD);
+	}
+	else {
+		MPI_Scatterv(global_data->features, feature_counts, feature_displ, MPI_FLOAT,
+>>>>>>> 162304876ac7c143a0f86d53fbf0cd4afa5d1567
+               local_features, feature_counts[proc_id], MPI_FLOAT, root_proc,
+               MPI_COMM_WORLD);
+	}
+
+	
+	// for (int i = 0; i < local_ndata; i++) { // DEBUG
+	// 	for (int j = 0; j < dim; j++) {
+	// 		float e = local_features[i*dim + j];
+	// 		if (e != 0) {
+	// 			printf("%0.f\n", e);
+	// 		}
+	// 	}
+	// }							 
 	// helper_print(local_features, local_ndata, dim); // DEBUG
   // We will decide which cluster center our feature reside in
   KMClust* local_clust = kmclust_new(nclust, dim);  
 	// we will use nclust which is a argument passed in and dim which is broadcasted from the root 
-
-  // helper_print(local_clust->features, local_ndata, dim);
-
   // now based on what our proc_id is we can figure out where are features are
   // initially assignd
   for (int i = 0; i < local_ndata; i++) {
-    int c = (proc_id * dim + i) % local_clust->nclust;
+    int c = (proc_id * dim + i) % (local_clust->nclust);
     local_assigns[i] = c;  // give every feature array a cluster based on our
                            // newly calculated c
   }
+
   // Calculating every num features per cluster
   for (int c = 0; c < local_clust->nclust; c++) {
-    int icount =
-        local_ndata /
-        local_clust->nclust;  // TODO: verify if this should be an int or a float
-    float extra = (c < (local_ndata % local_clust->nclust)) ? 1 : 0;
-    local_clust->counts[c] =
-        icount + extra;  // setting the counts for each local_clust based on how
-                         // many features they have
+    int icount = local_ndata / local_clust->nclust;  // TODO: verify if this should be an int or a float
+    int extra = (c < (local_ndata % local_clust->nclust)) ? 1 : 0;
+    local_clust->counts[c] = icount + extra;  // setting the counts for each local_clust based on how many features they have
+		// printf("icount: %d\n", icount); //DEBUG
+		// printf("extra: %d\n", extra); //DEBUG
+		// printf("local_clust[c]: %d\n", local_clust->counts[c]); //DEBUG
   }
+<<<<<<< HEAD
   // printf("1\n");
+=======
+	
+>>>>>>> 162304876ac7c143a0f86d53fbf0cd4afa5d1567
 	// helper_print(global_data->features, global_data->ndata, global_data->dim); // DEBUG
 	// helper_print(local_features, local_ndata, dim); // DEBUG
   
@@ -186,6 +249,7 @@ int main(int argc, char** argv) {
   }
 
   while ((nchanges > 0) && (curiter <= MAXITER)) {
+    printf("start here p:%d iter:%d\n", proc_id, curiter);
     // DETERMINE NEW CLUSTER CENTERS
     // reset cluster centers to 0.0
     for (int c = 0; c < local_clust->nclust;
@@ -205,62 +269,109 @@ int main(int argc, char** argv) {
 				}
 				// printf("%f ", temp);// DEBUG 
 		}
-		
-		// helper_print(local_clust->features, local_clust->nclust, local_clust->dim); //DEBUG
-		
-    /*
+
+    
+
+    // for (int i = 0; i < 1; i++) { //DEBUG
+		// 	for (int j = 0; j < dim; j++) {
+		// 		float e = local_clust->features[i * local_clust->dim + j];
+		// 		if (e != 0) {
+		// 			printf("%0.f ", e);
+		// 		}
+		// 	}
+		// 	printf("\n"); 
+		// }		
+		// for (int i = 0; i < local_clust->nclust; i++) { //DEBUG
+		// 	int e = local_clust->counts[i];
+		// 	if (e != 0) {
+		// 		printf("%d ", e);
+		// 	}
+		// }
+		// printf("\n");// DEBUG
+
+		/*
     At this point after every proc performs its local sum we need to do an
     all-to-all reduce to synchronize all the local clust.
     */
     // Allocating a recv_features to recv everyone's elses reduction before
     // copying back into local_clust
-
-    // float recv_features[local_clust->nclust * local_clust->dim];
-    float* recv_features = malloc(local_clust->nclust * local_clust->dim*sizeof(float));
+    printf("here3 p:%d iter:%d\n", proc_id, curiter);
+    float recv_features[local_clust->nclust * local_clust->dim];
     MPI_Allreduce(local_clust->features, recv_features,
                   local_clust->nclust * local_clust->dim, MPI_FLOAT, MPI_SUM,
                   MPI_COMM_WORLD);
-		
+		// helper_print(recv_features, 1, local_clust->dim); // DEBUG
+
+    printf("here4 p:%d iter:%d\n", proc_id, curiter);
     // copying features back into local clust
-    memcpy(local_clust->features, recv_features,
+    memcpy(local_clust->features, recv_features, 
            sizeof(float) * local_clust->dim * local_clust->nclust);
+					 
+    // for (int i = 0; i < 1; i++) { //DEBUG
+		// 	for (int j = 0; j < dim; j++) {
+		// 		float e = local_clust->features[i * local_clust->dim + j];
+		// 		if (e != 0) {
+		// 			printf("%0.f ", e);
+		// 		}
+		// 	}
+		// 	printf("\n"); 
+		// }
 
-    free(recv_features);
-
-    // helper_print(local_clust->features, local_clust->nclust, local_clust->dim); //DEBUG
-
-
+    // for (int i = 0; i < 1; i++) { //DEBUG
+		// 	for (int j = 0; j < dim; j++) {
+		// 		float e = local_clust->features[i * local_clust->dim + j];
+		// 		// if (e != 0.0) {
+		// 		// 	printf("%0.f ", e);
+		// 		// }
+		// 		printf("%0.f ", e);
+		// 	}
+		// 	printf("\n");
+		// } 
+		
     // at this point everyone has all the cluster features they need to do the
     // division step we all have the same local_clust divide by ndatas of data
     // to get mean of cluster center
     for (int c = 0; c < local_clust->nclust; c++) {
       if (local_clust->counts[c] > 0) {
         for (int d = 0; d < local_clust->dim; d++) {
-          // local_clust->features[c * local_clust->dim + d] =
-          //     local_clust->features[c * local_clust->dim + d] /
-          //     local_clust->counts[c];
-          local_clust->features[c * local_clust->dim + d] /= local_clust->counts[c];
-          // printf("%f\n", local_clust->features[c * local_clust->dim + d]);
+          local_clust->features[c * local_clust->dim + d] = local_clust->features[c * local_clust->dim + d] / local_clust->counts[c];
         }
       }
     }
-    // helper_print(local_clust->features, local_clust->nclust, local_clust->dim); //DEBUG
-
-
+		
+    // for (int i = 0; i < 1; i++) { //DEBUG
+		// 	for (int j = 0; j < dim; j++) {
+		// 		float e = local_clust->features[i * local_clust->dim + j];
+		// 		if (e != 0.00) {
+		// 			printf("%.2f ", e);
+		// 		}
+		// 		// printf("%.2f ", e);
+		// 	}
+		// 	printf("\n");
+		// } 
+		// // for (int i = 0; i < local_clust->nclust; i++) { //DEBUG
+		// 	int e = local_clust->counts[i];
+		// 	if (e != 0) {
+		// 		printf("%d ", e);
+		// 	}
+		// }
+		// printf("\n");// DEBUG
     // DETERMINE NEW CLUSTER ASSIGNMENTS FOR EACH DATA
     for (int c = 0; c < local_clust->nclust; c++) {
       local_clust->counts[c] = 0;
     }
 
+		nchanges = 0;
+		local_nchanges = 0;
+		// printf("global_data->ndata %d\n", global_data->ndata); //DEBUG
     // Determining the best clusters for all the data features
     for (int i = 0; i < local_ndata; i++) {
       int best_clust = INT_MIN;
       float best_distsq = INFINITY;
       for (int c = 0; c < local_clust->nclust; c++) {
         float distsq = 0.0;
-        for (int d = 0; d < local_clust->dim; d++) {
-          float diff = local_features[i * local_clust->dim + d] -
-                       local_clust->features[c * local_clust->dim + d];
+        for (int d = 0; d < dim; d++) {
+          float diff = local_features[i * local_clust->dim + d] - local_clust->features[c * local_clust->dim + d];
           distsq += diff * diff;
         }
         if (distsq < best_distsq) {
@@ -268,60 +379,95 @@ int main(int argc, char** argv) {
           best_distsq = distsq;
         }
       }
-
       // I will need to reduce these counts among different procs
       local_clust->counts[best_clust] += 1;
       if (best_clust != local_assigns[i]) {
-        local_nchanges += 1;  // note I am updating my local_nchanges instead of nchanges
+        nchanges += 1;  // note I am updating my local_nchanges instead of nchanges
         local_assigns[i] = best_clust;
+				
       }
+			// for (int i = 0; i < local_clust->nclust; i++) { //DEBUG
+			// 	printf("%d ", local_clust->counts[i]);
+			// }
+			// printf("\n"); //DEBUG
+
     }
+		// printf("proc_id: %d\n", proc_id);
+		// printf("%d nchanges before: %d\n", proc_id, nchanges); //DEBUG
+    MPI_Allreduce(&nchanges, &nchanges, 1, MPI_INT, MPI_SUM,
+                  MPI_COMM_WORLD);
+		// printf("%d nchanges before: %d\n", proc_id, nchanges); //DEBUG
     // space to reduce cluster counts in each proc
     float recv_counts[local_clust->nclust];
-
-    // Here I am allreducing the various local_clust->counts among the various
-    // procs
+    // Here I am allreducing the various local_clust->counts among the various procs
+    // 
     MPI_Allreduce(local_clust->counts, recv_counts, local_clust->nclust,
                   MPI_INT, MPI_SUM, MPI_COMM_WORLD);
     // copying counts back into local_cluster
     memcpy(local_clust->counts, recv_counts, sizeof(int) * local_clust->nclust);
-
+		
     // After this we need to do an all-to-all reduce to make sure our loop
     // termination conditions still hold Synchronize the nchanges variable among
     // all processes
-    MPI_Allreduce(&local_nchanges, &nchanges, 1, MPI_INT, MPI_SUM,
-                  MPI_COMM_WORLD);
+
     // I still need to set nchanges to local_changes to make sure loop
     // terminates
-    nchanges = local_nchanges;
+    // nchanges = local_nchanges;
+		// printf("proc_id: %d nchanges: %d\n", proc_id, nchanges); //DEBUG
+		// printf("proc_id: %d local_nchanges: %d\n", proc_id, local_nchanges); //DEBUG
+		// printf("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"); //DEBUG
     // Now from the root proc I can print out the current iteration information
+
     if (proc_id == root_proc) {
-      printf("%3d: %5d |", curiter, nchanges);
+			printf("%3d: %5d |", curiter, nchanges);
       for (int c = 0; c < nclust; c++) { 
         printf(" %4d", local_clust->counts[c]);
       }
+			
 			printf("\n");
     }
-    curiter += 1;  // TODO: unsure if this is still alright or if I should also
-                   // sync this with other procs
+		
+    curiter += 1;  // TODO: unsure if this is still alright or if I should also sync this with other procs
+    // printf("proc %d, curiter: %d\n", proc_id, curiter); //DEBUG
+		
     // After we decide on the best cluster for all our local features we need to
     // do an all-to-one we can use a gather to get everyone's local features
     // back into the global_data struct everyone sends data back to root proc
-    MPI_Gather(local_features, local_ndata * local_clust->dim, MPI_FLOAT,
-               global_data->features, local_ndata * local_clust->dim, MPI_FLOAT,
-               root_proc, MPI_COMM_WORLD);
+
+		if (proc_id != root_proc) {
+			MPI_Gather(local_features, local_ndata * local_clust->dim, MPI_FLOAT,
+						NULL, local_ndata * local_clust->dim, MPI_FLOAT,
+						root_proc, MPI_COMM_WORLD);
+		}
+		else {
+					MPI_Gather(local_features, local_ndata * local_clust->dim, MPI_FLOAT,
+										global_data->features, local_ndata * local_clust->dim, MPI_FLOAT,
+										root_proc, MPI_COMM_WORLD);
+		}
+		
     // we also need to gather the local_assigns back to the root
-    MPI_Gather(local_assigns, local_ndata, MPI_INT, global_data->assigns,
-               local_ndata, MPI_INT, root_proc, MPI_COMM_WORLD);
+		if (proc_id == root_proc) {
+				MPI_Gather(local_assigns, local_ndata, MPI_INT, global_data->assigns,
+							local_ndata, MPI_INT, root_proc, MPI_COMM_WORLD);
+		}
+		else {
+			MPI_Gather(local_assigns, local_ndata, MPI_INT, NULL,
+							local_ndata, MPI_INT, root_proc, MPI_COMM_WORLD);
+		}
+    
+    printf("end of p:%d iter:%d\n", proc_id, curiter);
+		
   }
+  
+  printf("end here p:%d iter:%d\n", proc_id, curiter);
   // At this point everyone should free their own locally allocated information
   // freeing stuff from the scatter
-	// FIXME uncomment the frees
-  // free(feature_counts);
-  // free(feature_displ);
-  // // freeing stuff used in the actuall algorithm
-  // free(local_features);
-  // free(local_assigns);
+
+  free(feature_counts);
+  free(feature_displ);
+  // freeing stuff used in the actuall algorithm
+  free(local_features);
+  free(local_assigns);
 
   // The following code is all done inside root. We only really need to print
   // the confusion matrix inside one proc
@@ -384,23 +530,28 @@ int main(int argc, char** argv) {
     for (int i = 0; i < global_data->ndata; i++) {
       fprintf(file, "%2d %2d\n", global_data->labels[i],
               global_data->assigns[i]);
+			
     }
     fclose(file);
     save_pgm_files(local_clust, savedir);
+		
     free(outfile);
+		
   }
-	// FIXME: uncomment below to free stuff
-  // all procs free local_clust
-  // freeKMClust(local_clust);
-  // // Mischalenous frees
-  // free(savedir);
-  // // FIXME: unsure if we need to deallocate global_data for other procs that
-  // // arent root google says it fine to not because I initialized it to null if
-  // // we are root we have to free the global_data
-  // if (proc_id == root_proc) {
-  //   freeKMData(global_data);
-  // }
-  // MPI_Finalize();
+
+  freeKMClust(local_clust);
+  // Mischalenous frees
+  free(savedir);
+  // FIXME: unsure if we need to deallocate global_data for other procs that
+  // arent root google says it fine to not because I initialized it to null if
+  // we are root we have to free the global_data
+	
+  if (proc_id == root_proc) {
+    freeKMData(global_data);
+  }
+	printf("---------------------------------------------------------------------------PROC_ID: %d ---------------------------------------------------------------------------\n", proc_id);
+  MPI_Finalize();
+	
   return 0;
 }
 
@@ -471,11 +622,12 @@ KMClust* kmclust_new(int nclust, int dim) {
     for (int d = 0; d < dim; d++) {
       clust->features[c * dim + d] = 0.0;
     }
-    clust->counts[c] = 0.0;
+    clust->counts[c] = 0;
   }
   return clust;
 }
 void save_pgm_files(KMClust* clust, char* savedir) {
+	
   int nclust = clust->nclust;
   int dim = clust->dim;
   int dim_root = (int)sqrt(dim);
@@ -493,6 +645,7 @@ void save_pgm_files(KMClust* clust, char* savedir) {
         }
       }
     }
+		
     for (int c = 0; c < nclust; c++) {
       char outfile[1024];
       sprintf(outfile, "%s/cent_%04d.pgm", savedir, c);
@@ -514,8 +667,12 @@ void save_pgm_files(KMClust* clust, char* savedir) {
         // fprintf(pgm, "%3d ", result);
       }
       // fwrite("\n", 1, 1, pgm);
+			
       fprintf(pgm, "\n");
+			// printf("writing cluster: %d\n", c); //DEBUG
       fclose(pgm);
+			
     }
+		
   }
 }
