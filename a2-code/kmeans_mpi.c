@@ -12,12 +12,14 @@
 #include <unistd.h>
 
 void helper_print(float* arr, int num_row, int num_col) {
-	for (int i = 0; i < num_row; i++) {
+	// for (int i = 0; i < num_row; i++) {
 		for (int j = 0; j < num_col; j++) {
-			printf("%.0f ", arr[i * num_col + j]);
-		}
-		printf("------------------------------------------------------------------------------\n");
+			printf("%.0f ", arr[(0) * num_col + j]);
+		// }
+		// printf("------------------------------------------------------------------------------\n");
 	}
+  printf("\n------------------\n");
+  return;
 }
 int filestats(char* filename, ssize_t* tot_tokens, ssize_t* tot_lines);
 int intMax(int* arr, int len);
@@ -137,12 +139,14 @@ int main(int argc, char** argv) {
 	// helper_print(global_data->features, global_data->ndata, global_data->dim); // DEBUG
 	// helper_print(local_features, local_ndata, dim); // DEBUG
   MPI_Scatterv(global_data->features, feature_counts, feature_displ, MPI_FLOAT,
-               local_features, feature_counts, MPI_FLOAT, root_proc,
+               local_features, feature_counts[proc_id], MPI_FLOAT, root_proc,
                MPI_COMM_WORLD);
 	// helper_print(local_features, local_ndata, dim); // DEBUG
   // We will decide which cluster center our feature reside in
   KMClust* local_clust = kmclust_new(nclust, dim);  
 	// we will use nclust which is a argument passed in and dim which is broadcasted from the root 
+
+  // helper_print(local_clust->features, local_ndata, dim);
 
   // now based on what our proc_id is we can figure out where are features are
   // initially assignd
@@ -161,8 +165,11 @@ int main(int argc, char** argv) {
         icount + extra;  // setting the counts for each local_clust based on how
                          // many features they have
   }
+  // printf("1\n");
 	// helper_print(global_data->features, global_data->ndata, global_data->dim); // DEBUG
 	// helper_print(local_features, local_ndata, dim); // DEBUG
+  
+  
   // Main Algorithm
   // Note we will need to do an all-to-all reduce to ensure that we sync these
   // termination conditions among procs
@@ -208,7 +215,8 @@ int main(int argc, char** argv) {
     // Allocating a recv_features to recv everyone's elses reduction before
     // copying back into local_clust
 
-    float recv_features[local_clust->nclust * local_clust->dim];
+    // float recv_features[local_clust->nclust * local_clust->dim];
+    float* recv_features = malloc(local_clust->nclust * local_clust->dim*sizeof(float));
     MPI_Allreduce(local_clust->features, recv_features,
                   local_clust->nclust * local_clust->dim, MPI_FLOAT, MPI_SUM,
                   MPI_COMM_WORLD);
@@ -217,18 +225,27 @@ int main(int argc, char** argv) {
     memcpy(local_clust->features, recv_features,
            sizeof(float) * local_clust->dim * local_clust->nclust);
 
+    free(recv_features);
+
+    // helper_print(local_clust->features, local_clust->nclust, local_clust->dim); //DEBUG
+
+
     // at this point everyone has all the cluster features they need to do the
     // division step we all have the same local_clust divide by ndatas of data
     // to get mean of cluster center
     for (int c = 0; c < local_clust->nclust; c++) {
       if (local_clust->counts[c] > 0) {
         for (int d = 0; d < local_clust->dim; d++) {
-          local_clust->features[c * local_clust->dim + d] =
-              local_clust->features[c * local_clust->dim + d] /
-              local_clust->counts[c];
+          // local_clust->features[c * local_clust->dim + d] =
+          //     local_clust->features[c * local_clust->dim + d] /
+          //     local_clust->counts[c];
+          local_clust->features[c * local_clust->dim + d] /= local_clust->counts[c];
+          // printf("%f\n", local_clust->features[c * local_clust->dim + d]);
         }
       }
     }
+    // helper_print(local_clust->features, local_clust->nclust, local_clust->dim); //DEBUG
+
 
     // DETERMINE NEW CLUSTER ASSIGNMENTS FOR EACH DATA
     for (int c = 0; c < local_clust->nclust; c++) {
@@ -245,7 +262,6 @@ int main(int argc, char** argv) {
           float diff = local_features[i * local_clust->dim + d] -
                        local_clust->features[c * local_clust->dim + d];
           distsq += diff * diff;
-        //   printf("i: %d, d: %d, c: %d\n", i, d, c); //DEBUG
         }
         if (distsq < best_distsq) {
           best_clust = c;

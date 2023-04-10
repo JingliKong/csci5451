@@ -1,5 +1,7 @@
 #include <sys/types.h>
 #include <stdio.h> 
+#include <ctype.h>
+#include <limits.h>
 int filestats(char *filename, ssize_t *tot_tokens, ssize_t *tot_lines){
 // Sets number of lines and total number of whitespace separated
 // tokens in the file. Returns -1 if file can't be opened, 0 on
@@ -41,4 +43,14 @@ int filestats(char *filename, ssize_t *tot_tokens, ssize_t *tot_lines){
   // printf("DBG: tokens: %lu\n",ntokens);
   // printf("DBG: lines: %lu\n",nlines);
   return 0;
+}
+
+int intMax (int *arr, int len) {
+    int current_min = INT_MIN; 
+    for (int i = 0; i < len; i++) {
+        if (arr[i] > current_min) {
+            current_min = arr[i]; 
+        }
+    }
+    return current_min; 
 }

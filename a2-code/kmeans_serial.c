@@ -32,6 +32,7 @@ Test 3:
 #include <ctype.h>
 
 int filestats(char *filename, ssize_t *tot_tokens, ssize_t *tot_lines); 
+int intMax (int *arr, int len);
 
 typedef struct KMClust {
     int nclust;   // number of clusters, the "k" in kmeans
@@ -40,41 +41,19 @@ typedef struct KMClust {
     int* counts;
 } KMClust;
 
-typedef struct KMData {
+typedef struct KMData { // ndata is the number of features we have 
     int ndata;    // count of data
     int dim;      // dimension of features for data
-    float* features; // pointers to individual features
+    float* features; // pointers to individual features also a 2D array storing all the elements for every feature
     int* assigns; // cluster to which data is assigned
     int* labels;  // label for data if available
     int nlabels;  // max value of labels +1, number 0,1,...,nlabel0
 } KMData;
 
-
-
-int intMax (int *arr, int len) {
-    int current_min = INT_MIN; 
-    for (int i = 0; i < len; i++) {
-        if (arr[i] > current_min) {
-            current_min = arr[i]; 
-        }
-    }
-    return current_min; 
-}
-
-float floatMax(float *arr, int len) {
-    float currentMax = -INFINITY; //in the mnist dataset the min # is 0    
-    for (int i = 0; i < len; i++) {
-        if ((arr[i] - currentMax) > 0.001) { // checking if the floating point # is larger 
-            currentMax = arr[i];
-        } 
-    }
-    return currentMax; 
-}
-
-
 KMData* kmdata_load(char* datafile) {
-    KMData* data = (KMData*)malloc(sizeof(KMData));
-    memset(data, 0, sizeof(KMData)); // zeroing out all data 
+    // KMData* data = malloc(sizeof(KMData));
+    // memset(data, 0, sizeof(KMData)); // zeroing out all data 
+    KMData* data = calloc(1, sizeof(KMData)); 
     FILE* fin = fopen(datafile, "r");
     if (fin == NULL) {
         printf("Error opening file\n");
@@ -86,12 +65,13 @@ KMData* kmdata_load(char* datafile) {
 
     // Getting file data we need to allocate correct amount of space 
     int fileStats = filestats(datafile, &tot_tokens, &tot_lines); 
+ 
     // allocating space for the number of labels in the dataset 
-    data->labels = (int *) calloc(tot_lines, sizeof(int) * tot_lines); 
+    data->labels = (int *) calloc(tot_lines, sizeof(int)); 
     //length of features array 
     int featuresLength = tot_tokens/tot_lines - 2; 
     // allocating space for all the features arrays 
-    data->features = malloc(tot_lines * tot_tokens * sizeof(float)); // allocating a 2d array for the features 
+    data->features = malloc(tot_lines * featuresLength * sizeof(float)); // allocating a 2d array for the features 
 
     int ndata = 0; // keeping track of ndata 
     int currentIntToken = 0; // used to store the current feature token 
@@ -101,18 +81,30 @@ KMData* kmdata_load(char* datafile) {
         fscanf (fin, "%d %s", &currentIntToken, colon);
         data->labels[i] = currentIntToken; // appending label to labels array 
         for (int j = 0; j < featuresLength; j++) {
-            fscanf(fin, "%d", &currentIntToken);
+            fscanf(fin, "%d", &currentIntToken); // FIXME: Currently segfaulting here in test case 5  
             data->features[i * featuresLength + j] = currentIntToken; // appending feature to feature array   
-        }
+        } // FIXME unsure as to why test case 4 is segfaulting 
     }
     fclose(fin);
     data->ndata = ndata; 
     data->dim = featuresLength; 
-    data->nlabels = intMax(data->labels, featuresLength) + 1; // note since I increment the labelIdx when I add a new label this should be the length
+    data->nlabels = intMax(data->labels, tot_lines) + 1; // note since I increment the labelIdx when I add a new label this should be the length
     data->assigns = malloc(sizeof(int) * data->ndata); //allocating assigns array for later 
     memset(data->assigns, 0, sizeof(int) * data->ndata); //zerioing out assigns for now 
     
     return data;
+}
+
+
+void helper_print(float* arr, int num_row, int num_col) {
+	// for (int i = 0; i < num_row; i++) {
+		for (int j = 0; j < num_col; j++) {
+			printf("%.0f ", arr[(0) * num_col + j]);
+		// }
+		// printf("------------------------------------------------------------------------------\n");
+	}
+  printf("\n------------------\n");
+  return;
 }
 
 
@@ -182,7 +174,7 @@ void save_pgm_files(KMClust* clust, char* savedir) {
     }
 }
 int main(int argc, char **argv) {
-    clock_t start = clock(), diff; //from the following stackoverflow post (https://stackoverflow.com/questions/459691/best-timing-method-in-c)
+    // clock_t start = clock(), diff; //from the following stackoverflow post (https://stackoverflow.com/questions/459691/best-timing-method-in-c)
 
     if (argc < 3) {
         exit(-1); 
@@ -194,27 +186,7 @@ int main(int argc, char **argv) {
 
     if (argc > 3) {
         strcpy(savedir, argv[3]);
-        int status = mkdir(savedir, S_IRWXU); 
-        if (status == -1) { // Error has occured with creating directory 
-            DIR* dir = opendir(savedir);
-            if (dir != NULL) {
-				// struct dirent *entry;
-				// char filepath[256]; 
-
-				// while ((entry = readdir(dir)) != NULL) {
-				// 	snprintf(filepath, sizeof(filepath), "%s/%s", savedir, entry->d_name);
-				// 	unlink(filepath); 
-				// }
-                closedir(dir); 
-            }
-
-            int rmd = rmdir(savedir); //removing the existing dir 
-
-            if (rmd == 0) { // if we sucessfully remove dir 
-                rmd = mkdir(savedir, S_IRWXU); 
-            }
-
-        } 
+        int status = mkdir(savedir, S_IRWXU);    
     }
     if (argc > 4) {
         MAXITER = atoi(argv[4]); 
@@ -232,14 +204,13 @@ int main(int argc, char **argv) {
    
     for (int i = 0; i < data->ndata; i++){
         int c = i % clust->nclust;
-        data->assigns[i] = c;
+        data->assigns[i] = c; // give every feature array a cluster 
     }
 
     for (int c = 0; c < clust->nclust; c++){
-        //is this supposed to be int???
-        int icount = data->ndata / clust->nclust;
-        int extra = (c < (data->ndata % clust->nclust)) ? 1 : 0;
-        clust->counts[c] = icount + extra;
+        float icount = data->ndata / clust->nclust;
+        float extra = (c < (data->ndata % clust->nclust)) ? 1 : 0;
+        clust->counts[c] = icount + extra; // counts is saying how may features are per cluster
     }
     
     // Main Algorithm
@@ -254,17 +225,19 @@ int main(int argc, char **argv) {
         //reset cluster centers to 0.0
         for (int c = 0; c < clust->nclust; c++){ 
             for (int d = 0; d < clust->dim; d++){
-                clust->features[c * clust->dim + d] = 0.0;
+                clust->features[c * clust->dim + d] = 0.0;   
             }
         }
 
-        //sum up data in each cluster
+        //sum up data in each cluster 
         for (int i = 0; i < data->ndata; i++){
             int c = data->assigns[i];
             for (int d = 0; d < clust->dim; d++){
-                clust->features[c * clust->dim + d] += data->features[i * clust->dim + d];
+                clust->features[c * clust->dim + d] += data->features[i * clust->dim + d]; 
             }
         }
+        // TODO: All-to-all here after additions so we all have the same clust->features 
+        // or is it all-reduce 
 
         // divide by ndatas of data to get mean of cluster center
         for (int c = 0; c < clust->nclust; c++){
@@ -274,6 +247,9 @@ int main(int argc, char **argv) {
                 }
             }
         }
+
+        helper_print(clust->features, clust->nclust, clust->dim); //DEBUG
+
         
         // DETERMINE NEW CLUSTER ASSIGNMENTS FOR EACH DATA
         for (int c = 0; c < clust->nclust; c++){
@@ -302,7 +278,7 @@ int main(int argc, char **argv) {
             }
         }
 
-
+        // TODO: More here when to stop experiment (All-reduce) here, and need to know what everyone's nchanges are so we can terminate 
         // Print iteration information at the end of the iter
         printf("%3d: %5d |", curiter, nchanges);
         for (int c = 0; c < nclust; c++){
@@ -311,7 +287,7 @@ int main(int argc, char **argv) {
         printf("\n");
         curiter += 1;
     }
-
+    // TODO: All-to-one to the root, root does all printing for confusion matrix 
     // Loop has converged
     if (curiter > MAXITER){
         printf("WARNING: maximum iteration %d exceeded, may not have conveged", MAXITER);
@@ -404,9 +380,9 @@ int main(int argc, char **argv) {
 	// Mischalenous frees 
 	free(savedir); 
 	free(outfile); 
-
-    diff = clock() - start;
-    int msec = diff * 1000 / CLOCKS_PER_SEC;
+    return 0;
+    // diff = clock() - start;
+    // int msec = diff * 1000 / CLOCKS_PER_SEC;
     // printf("Time taken %d seconds %d milliseconds\n", msec/1000, msec%1000);
     // free(savedir);
 } 
