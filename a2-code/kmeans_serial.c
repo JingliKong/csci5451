@@ -275,7 +275,7 @@ int main(int argc, char **argv) {
                 }
             }
 
-            printf("DEBUG: data %f, clust: %d\n", best_distsq, best_clust);
+            // printf("DEBUG: data %f, clust: %d\n", best_distsq, best_clust);
             clust->counts[best_clust] += 1;
             if (best_clust != data->assigns[i]){
                 nchanges += 1;
@@ -284,10 +284,10 @@ int main(int argc, char **argv) {
             // printf("DEBUG: loc %d, clust: %d\n", data->assigns[i], best_clust);
         }
 
-            for (int i = 0; i < data->ndata; i++){
-      printf("%d ", clust->counts[i]);
-    }
-    printf("\n");
+    //         for (int i = 0; i < data->ndata; i++){
+    //   printf("%d ", clust->counts[i]);
+    // }
+    // printf("\n");
 
         // TODO: More here when to stop experiment (All-reduce) here, and need to know what everyone's nchanges are so we can terminate 
         // Print iteration information at the end of the iter
