@@ -248,7 +248,7 @@ int main(int argc, char **argv) {
             }
         }
 
-        helper_print(clust->features, clust->nclust, clust->dim); //DEBUG
+        // helper_print(clust->features, clust->nclust, clust->dim); //DEBUG
 
         
         // DETERMINE NEW CLUSTER ASSIGNMENTS FOR EACH DATA
@@ -265,18 +265,29 @@ int main(int argc, char **argv) {
                 for (int d = 0; d < clust->dim; d++){
                     float diff = data->features[i * clust->dim + d] - clust->features[c  * clust->dim + d];
                     distsq += diff*diff;
+                    
                 }
                 if (distsq < best_distsq){
                     best_clust = c;
                     best_distsq = distsq;
+                    // printf("BEST-DEBUG: %f\n", best_distsq);
+                    // printf("BEST-DEBUG %d: %f\n", c, best_distsq);
                 }
             }
+
+            printf("DEBUG: data %f, clust: %d\n", best_distsq, best_clust);
             clust->counts[best_clust] += 1;
             if (best_clust != data->assigns[i]){
                 nchanges += 1;
                 data->assigns[i] = best_clust;
             }
+            // printf("DEBUG: loc %d, clust: %d\n", data->assigns[i], best_clust);
         }
+
+            for (int i = 0; i < data->ndata; i++){
+      printf("%d ", clust->counts[i]);
+    }
+    printf("\n");
 
         // TODO: More here when to stop experiment (All-reduce) here, and need to know what everyone's nchanges are so we can terminate 
         // Print iteration information at the end of the iter
