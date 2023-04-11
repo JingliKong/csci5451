@@ -17,22 +17,16 @@ void here() { // just for DEBUG
 }
 
 void helper_print(float* arr, int num_row, int num_col) {
-	// for (int i = 0; i < num_row; i++) {
+	for (int i = 0; i < num_row; i++) {
 		for (int j = 0; j < num_col; j++) {
-<<<<<<< HEAD
-			printf("%.0f ", arr[(0) * num_col + j]);
-		// }
-		// printf("------------------------------------------------------------------------------\n");
-=======
 			float e = arr[i * num_col + j]; 
 			if (e != 0.0) {
 				printf("%.0f ", arr[i * num_col + j]);
 			}
 		}
-		printf("------------------------------------------------------------------------------\n");
->>>>>>> 162304876ac7c143a0f86d53fbf0cd4afa5d1567
-	}
-  printf("\n------------------\n");
+		// printf("------------------------------------------------------------------------------\n");
+  }
+  // printf("\n------------------\n");
   return;
 }
 int filestats(char* filename, ssize_t* tot_tokens, ssize_t* tot_lines);
@@ -171,9 +165,6 @@ int main(int argc, char** argv) {
 	// printf("local_ndata[0]: %d\n", local_ndata); // DEBUG
 	// helper_print(global_data->features, global_data->ndata, global_data->dim); // DEBUG
 	// helper_print(local_features, local_ndata, dim); // DEBUG
-<<<<<<< HEAD
-  MPI_Scatterv(global_data->features, feature_counts, feature_displ, MPI_FLOAT,
-=======
 	printf("Proc id: %d\n", proc_id);  // DEBUG
 	for (int i = 0; i < total_procs; i++) { // DEBUG
 		// printf("%d feature_counts[%d]: %d\n", i, i, feature_counts[i]);
@@ -189,7 +180,6 @@ int main(int argc, char** argv) {
 	}
 	else {
 		MPI_Scatterv(global_data->features, feature_counts, feature_displ, MPI_FLOAT,
->>>>>>> 162304876ac7c143a0f86d53fbf0cd4afa5d1567
                local_features, feature_counts[proc_id], MPI_FLOAT, root_proc,
                MPI_COMM_WORLD);
 	}
@@ -224,11 +214,7 @@ int main(int argc, char** argv) {
 		// printf("extra: %d\n", extra); //DEBUG
 		// printf("local_clust[c]: %d\n", local_clust->counts[c]); //DEBUG
   }
-<<<<<<< HEAD
-  // printf("1\n");
-=======
 	
->>>>>>> 162304876ac7c143a0f86d53fbf0cd4afa5d1567
 	// helper_print(global_data->features, global_data->ndata, global_data->dim); // DEBUG
 	// helper_print(local_features, local_ndata, dim); // DEBUG
   
@@ -463,11 +449,11 @@ int main(int argc, char** argv) {
   // At this point everyone should free their own locally allocated information
   // freeing stuff from the scatter
 
-  free(feature_counts);
-  free(feature_displ);
-  // freeing stuff used in the actuall algorithm
-  free(local_features);
-  free(local_assigns);
+  // free(feature_counts);
+  // free(feature_displ);
+  // // freeing stuff used in the actuall algorithm
+  // free(local_features);
+  // free(local_assigns);
 
   // The following code is all done inside root. We only really need to print
   // the confusion matrix inside one proc
@@ -549,7 +535,7 @@ int main(int argc, char** argv) {
   if (proc_id == root_proc) {
     freeKMData(global_data);
   }
-	printf("---------------------------------------------------------------------------PROC_ID: %d ---------------------------------------------------------------------------\n", proc_id);
+	// printf("---------------------------------------------------------------------------PROC_ID: %d ---------------------------------------------------------------------------\n", proc_id);
   MPI_Finalize();
 	
   return 0;
