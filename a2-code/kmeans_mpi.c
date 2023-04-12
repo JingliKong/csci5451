@@ -388,11 +388,11 @@ int main(int argc, char** argv) {
   // At this point everyone should free their own locally allocated information
   // freeing stuff from the scatter
 
-  free(feature_counts);
-  free(feature_displ);
+  // free(feature_counts);
+  // free(feature_displ);
   // freeing stuff used in the actuall algorithm
-  free(local_features);
-  free(local_assigns);
+  // free(local_features);
+  // free(local_assigns);
 
   // The following code is all done inside root. We only really need to print
   // the confusion matrix inside one proc
@@ -459,7 +459,7 @@ int main(int argc, char** argv) {
     fclose(file);
     save_pgm_files(local_clust, savedir);
 		
-    free(outfile);
+    // free(outfile);
 		
   }
 
@@ -467,23 +467,24 @@ int main(int argc, char** argv) {
 	printf("proc_id %d\n", proc_id);
 	// printf("%p\n", local_clust->features);
 	// printf("%p\n", local_clust->counts);
-	free(local_clust->features);
-	free(local_clust->counts);
+	// free(local_clust->features);
+	// free(local_clust->counts);
 	if (proc_id != root_proc) {
-		free(local_clust);
+		// free(local_clust);
 	}
   // Mischalenous frees
-  free(savedir);
+  // free(savedir);
   // FIXME: unsure if we need to deallocate global_data for other procs that
   // arent root google says it fine to not because I initialized it to null if
   // we are root we have to free the global_data
 	
   if (proc_id == root_proc) {
-    freeKMData(global_data);
+    // freeKMData(global_data);
 		
   }
 	// printf("---------------------------------------------------------------------------PROC_ID: %d ---------------------------------------------------------------------------\n", proc_id);
   MPI_Finalize();
+  printf("p:%d, AFTER\n", proc_id);
 	
   return 0;
 }
@@ -495,7 +496,7 @@ KMData* kmdata_load(char* datafile) {
   FILE* fin = fopen(datafile, "r");
   if (fin == NULL) {
     printf("Error opening file\n");
-    free(data);
+    // free(data);
     return NULL;
   }
   ssize_t tot_tokens = 0;  // number of tokens in datafile
