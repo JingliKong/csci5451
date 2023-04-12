@@ -201,7 +201,7 @@ int main(int argc, char** argv) {
     local_assigns[i] = c;  // give every feature array a cluster based on our
                            // newly calculated c
   }
-	// printf("proc_id: %d\n", proc_id);
+	// printf("proc_id: %d\n", proc_id); //DEBUG
 	// for (int i = 0; i < local_ndata; i++) { //DEBUG
 	// 	printf("%d ", local_assigns[i]);
 	// }
@@ -359,26 +359,36 @@ int main(int argc, char** argv) {
     // After we decide on the best cluster for all our local features we need to
     // do an all-to-one we can use a gather to get everyone's local features
     // back into the global_data struct everyone sends data back to root proc
-
-		
-    // // we also need to gather the local_assigns back to the root
+		// we also need to gather the local_assigns back to the root
 		// if (proc_id == root_proc) {
-		// 		MPI_Gather(local_assigns, local_ndata, MPI_INT, global_data->assigns,
-		// 					local_ndata, MPI_INT, root_proc, MPI_COMM_WORLD);
+    //   MPI_Gather(local_assigns, local_ndata, MPI_INT, 
+    //         global_data->assigns, local_ndata, MPI_INT, root_proc, 
+    //         MPI_COMM_WORLD);
 		// }
 		// else {
-		// 	MPI_Gather(local_assigns, local_ndata, MPI_INT, NULL,
-		// 					local_ndata, MPI_INT, root_proc, MPI_COMM_WORLD);
+		// 	MPI_Gather(local_assigns, local_ndata, MPI_INT, 
+    //         NULL, local_ndata, MPI_INT, root_proc, 
+    //         MPI_COMM_WORLD);
 		// }
-
+		// dividing everything by dim to get the number of feature rows we have instead of the entire vector
+		for (int i = 0; i < total_procs; i++) { 
+			// feature_counts[i] = feature_counts[i] / dim;
+			feature_displ[i] = feature_displ[i] / dim; 
+		}
+		if (proc_id == root_proc) { // debug
+			for (int i = 0; i < total_procs; i++) {
+				printf("feature_displ[%d]: %d\n", i, feature_displ[i]);
+			}
+		}
+		// printf("feature_displ[%d]: %d\n", proc_id, feature_displ[proc_id]); // DEBUG
 		if (proc_id == root_proc) {
-      MPI_Gather(local_assigns, local_ndata, MPI_INT, 
-            global_data->assigns, local_ndata, MPI_INT, root_proc, 
+      MPI_Gatherv(local_assigns, local_ndata, MPI_INT, 
+            global_data->assigns, feature_counts, feature_displ, MPI_INT, root_proc, 
             MPI_COMM_WORLD);
 		}
-		else {
-			MPI_Gather(local_assigns, local_ndata, MPI_INT, 
-            NULL, local_ndata, MPI_INT, root_proc, 
+		else { // not root proc
+			MPI_Gatherv(local_assigns, local_ndata, MPI_INT, 
+            NULL, feature_counts, feature_displ, MPI_INT, root_proc, 
             MPI_COMM_WORLD);
 		}	    
     // printf("end of p:%d iter:%d\n", proc_id, curiter);
@@ -464,7 +474,7 @@ int main(int argc, char** argv) {
   }
 
   // freeKMClust(local_clust);
-	printf("proc_id %d\n", proc_id);
+
 	// printf("%p\n", local_clust->features);
 	// printf("%p\n", local_clust->counts);
 	// free(local_clust->features);
