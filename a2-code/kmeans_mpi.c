@@ -377,7 +377,7 @@ int main(int argc, char** argv) {
 		}
 		if (proc_id == root_proc) { // debug
 			for (int i = 0; i < total_procs; i++) {
-				printf("feature_displ[%d]: %d\n", i, feature_displ[i]);
+				// printf("feature_displ[%d]: %d\n", i, feature_displ[i]);
 			}
 		}
 		// printf("feature_displ[%d]: %d\n", proc_id, feature_displ[proc_id]); // DEBUG
@@ -494,7 +494,7 @@ int main(int argc, char** argv) {
   }
 	// printf("---------------------------------------------------------------------------PROC_ID: %d ---------------------------------------------------------------------------\n", proc_id);
   MPI_Finalize();
-  printf("p:%d, AFTER\n", proc_id);
+  // printf("p:%d, AFTER\n", proc_id);
 	
   return 0;
 }
