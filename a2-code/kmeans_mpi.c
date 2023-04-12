@@ -492,7 +492,6 @@ int main(int argc, char** argv) {
     // freeKMData(global_data);
 		
   }
-	// printf("---------------------------------------------------------------------------PROC_ID: %d ---------------------------------------------------------------------------\n", proc_id);
   MPI_Finalize();
   // printf("p:%d, AFTER\n", proc_id);
 	
