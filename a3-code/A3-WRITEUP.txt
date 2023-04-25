@@ -1,0 +1,95 @@
+                              ____________
+
+                               A3 WRITEUP
+                              ____________
+
+
+
+
+
+GROUP MEMBERS
+-------------
+
+  - Member 1: <NAME> <X500>
+  - Member 2: <NAME> <X500>
+
+  Up to 2 people may collaborate on this assignment. Write names/x.500
+  above. If working alone, leave off Member 2.
+
+  ONLY ONE GROUP MEMBER SHOULD SUBMIT TO GRADESCOPE THEN ADD THEIR
+  PARTNER ACCORDING TO INSTRUCTIONS IN THE ASSIGNMENT WEB PAGE.
+
+
+Problem 1: kmeans_omp
+=====================
+
+kmeans_omp Timing Table
+~~~~~~~~~~~~~~~~~~~~~~~
+
+  Fill in the following table on measuring the performance of your
+  `kmeans_omp' program on `cudaNN.cselabs.umn.edu' where `NN' is `01' to
+  `05'. Replace 00.00 entries with your actual run times. You can use
+  the provided `kmeans-omp.sh' script to ease this task.
+
+  The columns are for each of 3 data files that are provided and run in
+  the job script.
+
+  -------------------------------------------------------------------
+                                       Data File                     
+   Procs  digits_all_5e3.txt  digits_all_1e4.txt  digits_all_3e4.txt 
+  -------------------------------------------------------------------
+       1               00.00               00.00               00.00 
+       2               00.00               00.00               00.00 
+       4               00.00               00.00               00.00 
+       8               00.00               00.00               00.00 
+      10               00.00               00.00               00.00 
+      13               00.00               00.00               00.00 
+      16               00.00               00.00               00.00 
+      32               00.00               00.00               00.00 
+  -------------------------------------------------------------------
+
+
+kmeans_omp Discussion Questions
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+  Analyze your table of results and answer the following questions.
+  1. Did using more processors result in speedups?
+  2. Describe any trends or anomalies you see in the timings and
+     speculate on their causes - e.g. was there are a steady increase in
+     runtimes, steady decrease, or jagged changes in timing?
+  3. Try to explain how number of processors and problem size seem to
+     affect runtimes/speedup in the problem.
+
+
+Problem 2: kmeans_cuda
+======================
+
+kmeans_cuda Timing Table
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+  Fill in the following table on measuring the performance of your
+  `kmeans_cuda' program on `cudaNN.cselabs.umn.edu' where `NN' is `01'
+  to `05'. Replace 00.00 entries with your actual run times. You can use
+  the provided `kmeans-omp.sh' script to ease this task.
+
+  The columns are for each of 3 data files that are provided and run in
+  the job script.
+
+  ------------------------------------------------------------------------
+                                            Data File                     
+   Procs       digits_all_5e3.txt  digits_all_1e4.txt  digits_all_3e4.txt 
+  ------------------------------------------------------------------------
+   CPU Serial               00.00               00.00               00.00 
+   GPU                      00.00               00.00               00.00 
+  ------------------------------------------------------------------------
+
+
+kmeans_cuda Discussion Questions
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+  Analyze your table of results and answer the following questions.
+  1. Did using the GPU result in speedups?
+  2. Describe your general approach on how you used GPU threads/blocks
+     to parallelize the algorithm.
+     - How did you subdivide the Cluster Center Calculation Phase?
+     - How did you subdivide the Data Assignment Phase?
