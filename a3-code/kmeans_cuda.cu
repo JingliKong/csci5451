@@ -3,6 +3,12 @@
 #include <cuda.h>
 #include <cuda_runtime.h>
 
+void checkCudaError(cudaError_t err, int line_num, char *comment) {
+  if (err != cudaSuccess) {
+    printf("CUDA Error: %s at %s:%d\n", cudaGetErrorString(err), comment, line_num);
+    exit(err);
+  }
+}
 // ./kmeans_cuda mnist-data/digits_all_1e2.txt 10 test-results/outdir_cuda01 500
 __global__ void initAssignments(int *assigns, int ndata, int nclust) {
     // gives us the actual index of the feature same as in serial version
@@ -11,6 +17,7 @@ __global__ void initAssignments(int *assigns, int ndata, int nclust) {
 		assigns[idx] = idx % nclust;
     }
 }
+
 // for (int i = 0; i < data->ndata; i++) { // instead of doing this loop we create nclust blocks with ndata per block?
 //     int c = data->assigns[i]; // need to copy this memory over to device 
 //     for (int d = 0; d < clust->dim; d++) { // this is fixed an needs to be passed in 
@@ -18,41 +25,36 @@ __global__ void initAssignments(int *assigns, int ndata, int nclust) {
 //         data->features[i * clust->dim + d]; // features is passed in and we use the index and stuff of the thread to know which elements to add 
 //     }
 // }
-__global__ void updateCentroids (int ndata, int clust_dim, int *assigns, float *data_features, float* clust_features) 
+__global__ void updateCentroids (int ndata, int num_clusters, int clust_dim, int *assigns, float *data_features, float* clust_features) 
 {
-    int idx = blockDim.x * blockIdx.x + threadIdx.x;
-    
-    // Allocate shared memory for storing sums
-    extern __shared__ float shared_data[];
 
-    // Initialize shared memory to zero
-    memset(shared_data, 0, sizeof(float) * blockDim.x * clust_dim);
-    // Use indexing to access only the part of the array that this thread needs
-    float* my_data = shared_data + threadIdx.x * clust_dim;
+	// blockDim.x is the # of features because I have the # features be how many threads I spin up per cluster and I have # cluster blocks. 
 
-    int c = assigns[idx];
-    
-    for (int d = 0; d < clust_dim; d++)
-    {
-        my_data[d] += data_features[clust_dim * idx + d];
-    }
-    __syncthreads();
+	// Allocate shared memory for storing sums
+	extern __shared__ float shared_data[];
 
-    if (threadIdx.x == 0) // only one thread needs to edit global memory
-    {   
-        float *clust_feat_ptr = idx 
-        for (int i = 0; i < clust_dim; i++) {
-            atomicAdd(&clust_features[idx], shared_data[i]);
-        }
-    }
+	// Initialize shared memory to zero
+	// memset(shared_data, 0, sizeof(float) * num_clusters * clust_dim); // we need to be able to add to any cluster centroid
+
+	int c = assigns[threadIdx.x];
+	if (c == blockIdx.x) { // if this thread's features belong to this cluster
+		for (int d = 0; d < clust_dim; d++) {
+				atomicAdd(&shared_data[d], data_features[threadIdx.x * clust_dim + d]);
+		}
+	} 
+
+	__syncthreads();
+
+	if (threadIdx.x == 0) // only one thread needs to edit global memory
+	{   
+		// Add up shared memory for each cluster
+		for (int i = 0; i < clust_dim; i++) {
+			clust_features[blockIdx.x * clust_dim + i], shared_data[i];
+		}
+	}
 }
 
 
-
-
-
-// int filestats(char *filename, ssize_t *tot_tokens, ssize_t *tot_lines);
-// int intMax(int *arr, int len);
 
 int main(int argc, char **argv) {
   if (argc < 3) {
@@ -87,13 +89,20 @@ int main(int argc, char **argv) {
 	int gridSize = (data->ndata / blockSize + (data->ndata % blockSize));
 	int *d_assigns; 
 	// allocating memory on device  
-	cudaMalloc((void **) &d_assigns, sizeof(int) * data->ndata); 
+	cudaError_t err0 = cudaMalloc((void **) &d_assigns, sizeof(int) * data->ndata);
+	checkCudaError(err0, 96, "d_assigns"); 
 	initAssignments <<<gridSize, blockSize>>> (d_assigns, data->ndata, clust->nclust); 
-
+	// checking if initAssignments failed to launch
+	err0 = cudaGetLastError();
+	checkCudaError(err0, 98, "initAssignments");
 	// sync and copy memory back to CPU
-	cudaDeviceSynchronize(); 
-	cudaMemcpy(data->assigns, d_assigns, sizeof(int) * data->ndata, cudaMemcpyDeviceToHost); 
-
+	err0 = cudaDeviceSynchronize(); 
+	checkCudaError(err0, 102, "sync");
+	err0 = cudaMemcpy(data->assigns, d_assigns, sizeof(int) * data->ndata, cudaMemcpyDeviceToHost); 
+	checkCudaError(err0, 104, "d_assigns");
+	// freeing d_assigns
+	err0 = cudaFree(d_assigns);
+	checkCudaError(err0, 107, "cuda free d_assigns");
 	// TODO: This should be done locally per thread probably
   for (int c = 0; c < clust->nclust; c++) {
     float icount = data->ndata / clust->nclust;
@@ -122,31 +131,52 @@ int main(int argc, char **argv) {
 		dim3 numBlocks(clust->nclust); // number of blocks per grid
 
 		// allocating variables used for parallelization
-		int *d_feature_assigns;
-		float *d_data_features, *d_clust_features;
-		int *d_clust_counts;
+		int *d_feature_assigns = NULL;
+		float *d_data_features = NULL; 
+		float *d_clust_features = NULL;
+		printf("data->ndata: %d \n", data->ndata); // DEBUG
     // Allocate memory on the device
-    cudaMalloc((void**)&d_feature_assigns, data->ndata * sizeof(int));
-    cudaMalloc((void**)&d_data_features, data->ndata * data->dim * sizeof(float));
-    cudaMalloc((void**)&d_clust_features, clust->dim * sizeof(float));		
-		cudaMalloc((void**)&d_clust_counts, clust->nclust * sizeof(int));
-		cudaMemset(d_clust_counts, 0, clust->nclust * sizeof(int));
-		// Copy data from host to device
-    cudaMemcpy(d_feature_assigns, data->assigns, data->ndata * sizeof(int), cudaMemcpyHostToDevice);
-    cudaMemcpy(d_data_features, data->features, data->ndata * data->dim * sizeof(float), cudaMemcpyHostToDevice);
-    cudaMemcpy(d_clust_features, clust->features, clust->dim * sizeof(float), cudaMemcpyHostToDevice);
-
-		updateCentroids<<<numBlocks, blockDim, clust->dim * sizeof(float)>>> (data->ndata, data->dim, d_feature_assigns, d_data_features, d_clust_features, d_clust_counts); // TODO: memcpy over this data to device 
+    cudaError_t err = cudaMalloc((void**)&d_feature_assigns, data->ndata * sizeof(int));
+		checkCudaError(err, 141, "d_feature_assigns");
+	
+    err = cudaMalloc((void**)&d_data_features, data->ndata * data->dim * sizeof(float));
+		checkCudaError(err, 144, "d_data_features");
+    err = cudaMalloc((void**)&d_clust_features, clust->dim * sizeof(float));		
+		checkCudaError(err, 146, "d_clust_features");
 		
-		// Copy the result from device to host
-    cudaMemcpy(clust->features, d_clust_counts, clust->dim * sizeof(float), cudaMemcpyDeviceToHost);
-		cudaMemcpy(clust->counts, d_clust_counts, clust->nclust * sizeof(int), cudaMemcpyDeviceToHost);
-
-		printf("clust_features before kernel: ");
-		for (int i = 0; i < clust->dim; i++) {
-				printf("%f ", clust->features[i]);
+		for (int i = 0; i < 25; i++) { // DEBUG
+			printf("%d ", data->assigns[i]);
 		}
-		printf("\n");
+		printf("\n"); // DEBUG
+
+		// Copy data from host to device
+    cudaError_t d_feature_assigns_err = cudaMemcpy(d_feature_assigns, data->assigns, data->ndata * sizeof(int), cudaMemcpyHostToDevice);
+		checkCudaError (d_feature_assigns_err, 156, "d_feature_assigns");
+
+    cudaError_t d_data_features_err = cudaMemcpy(d_data_features, data->features, data->ndata * data->dim * sizeof(float), cudaMemcpyHostToDevice);
+		checkCudaError (d_data_features_err, 160, "d_data_features");
+
+    cudaError_t d_clust_features_err = cudaMemcpy(d_clust_features, clust->features, clust->dim * sizeof(float), cudaMemcpyHostToDevice);
+		checkCudaError (d_clust_features_err, 163, "d_clust_features");
+		// updateCentroids<<<numBlocks, blockDim, clust->dim * sizeof(float)>>> (data->ndata, clust->nclust, data->dim, d_feature_assigns, d_data_features, d_clust_features); 
+		int shared_mem_size = clust->nclust * clust->dim * sizeof(float); // this is how much shared memory should be in the kernel for each block
+		updateCentroids<<<numBlocks, blockDim, shared_mem_size>>> (data->ndata, clust->nclust, data->dim, d_feature_assigns, d_data_features, d_clust_features); 
+		err = cudaGetLastError();
+		checkCudaError (err, 166, "updateCentroids");
+		// Copy the result from device to host
+		err = cudaDeviceSynchronize(); 
+		checkCudaError (err, 170, "sync");
+    err = cudaMemcpy(clust->features, d_clust_features, clust->dim * sizeof(float), cudaMemcpyDeviceToHost);
+		checkCudaError (err, 172, "clust->features device to host");
+		cudaFree(d_feature_assigns);
+		cudaFree(d_data_features);
+		cudaFree(d_clust_features);
+		
+		
+		// for (int i = 0; i < clust->dim; i++) {
+		// 		printf("%f ", clust->features[i]);
+		// }
+		// printf("\n");
 
 		// divide by ndatas of data to get mean of cluster center
     for (int c = 0; c < clust->nclust; c++) {
@@ -186,10 +216,7 @@ int main(int argc, char **argv) {
         nchanges += 1;
         data->assigns[i] = best_clust;
       }
-    cudaFree(d_feature_assigns);
-		cudaFree(d_data_features);
-		cudaFree(d_clust_features);
-		cudaFree(d_clust_counts);
+
     }
 
     printf("%3d: %5d |", curiter, nchanges);
@@ -295,7 +322,7 @@ int main(int argc, char **argv) {
   free(outfile);
 
 	// Freeing cuda stuff 
-	cudaFree(d_assigns);
+	
 
 	
 	
