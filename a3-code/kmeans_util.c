@@ -50,8 +50,6 @@ int filestats(char *filename, ssize_t *tot_tokens, ssize_t *tot_lines){
   *tot_tokens = ntokens;
   *tot_lines = nlines;
   fclose(fin);
-  // printf("DBG: tokens: %lu\n",ntokens);
-  // printf("DBG: lines: %lu\n",nlines);
   return 0;
 }
 
