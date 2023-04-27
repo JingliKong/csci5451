@@ -9,6 +9,7 @@
 #include <ctype.h>
 #include <stdint.h>
 #include <math.h>
+
 #include <limits.h>
 
 // Sets number of lines and total number of whitespace separated

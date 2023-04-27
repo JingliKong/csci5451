@@ -11,7 +11,6 @@ __global__ void initAssignments(int *assigns, int ndata, int nclust) {
 		assigns[idx] = idx % nclust;
     }
 }
-
 // for (int i = 0; i < data->ndata; i++) { // instead of doing this loop we create nclust blocks with ndata per block?
 //     int c = data->assigns[i]; // need to copy this memory over to device 
 //     for (int d = 0; d < clust->dim; d++) { // this is fixed an needs to be passed in 
