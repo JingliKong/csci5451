@@ -1,6 +1,5 @@
 #include "kmeans_util.h"
 
-
 // Sets number of lines and total number of whitespace separated
 // tokens in the file. Returns -1 if file can't be opened, 0 on
 // success.

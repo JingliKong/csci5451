@@ -12,13 +12,13 @@ __global__ void initAssignments(int *assigns, int ndata, int nclust) {
     }
 }
 
-for (int i = 0; i < data->ndata; i++) { // instead of doing this loop we create nclust blocks with ndata per block?
-    int c = data->assigns[i]; // need to copy this memory over to device 
-    for (int d = 0; d < clust->dim; d++) { // this is fixed an needs to be passed in 
-    clust->features[c * clust->dim + d] += // instead of adding to clust->features we need to allocate some shared memory for the threads to work on 
-        data->features[i * clust->dim + d]; // features is passed in and we use the index and stuff of the thread to know which elements to add 
-    }
-}
+// for (int i = 0; i < data->ndata; i++) { // instead of doing this loop we create nclust blocks with ndata per block?
+//     int c = data->assigns[i]; // need to copy this memory over to device 
+//     for (int d = 0; d < clust->dim; d++) { // this is fixed an needs to be passed in 
+//     clust->features[c * clust->dim + d] += // instead of adding to clust->features we need to allocate some shared memory for the threads to work on 
+//         data->features[i * clust->dim + d]; // features is passed in and we use the index and stuff of the thread to know which elements to add 
+//     }
+// }
 __global__ void updateCentroids (int ndata, int clust_dim, int *assigns, float *data_features, float* clust_features) 
 {
     int idx = blockDim.x * blockIdx.x + threadIdx.x;
