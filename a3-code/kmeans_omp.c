@@ -1,4 +1,4 @@
-#include "kmeans_util.c"
+#include "kmeans_util.h"
 #include <omp.h>
 
 int main(int argc, char **argv) {
@@ -53,19 +53,31 @@ int main(int argc, char **argv) {
         clust->features[c * clust->dim + d] = 0.0;
       }
     }
-
+    // cluster locks 
+    omp_lock_t *cluster_locks = (omp_lock_t *) malloc(clust->nclust * sizeof(omp_lock_t));
+    // Initialize the locks
+    for (int i = 0; i < clust->nclust; i++) {
+        omp_init_lock(&cluster_locks[i]);
+    }
     // sum up data in each cluster
+    #pragma omp parallel for
     for (int i = 0; i < data->ndata; i++) {
       int c = data->assigns[i];
       for (int d = 0; d < clust->dim; d++) {
-        clust->features[c * clust->dim + d] +=
-            data->features[i * clust->dim + d];
+        omp_set_lock(&cluster_locks[c]);
+        clust->features[c * clust->dim + d] += data->features[i * clust->dim + d];
+        omp_unset_lock(&cluster_locks[c]);
       }
     }
-    // TODO: All-to-all here after additions so we all have the same
-    // clust->features or is it all-reduce
+    // Destroy the locks
+    for (int i = 0; i < clust->nclust; i++) {
+        omp_destroy_lock(&cluster_locks[i]);
+    }
+    free(cluster_locks);
 
     // divide by ndatas of data to get mean of cluster center
+    // since all threads are doing a division on a differnt portion of the array all we have to do is a normal parallel for loop though we still have false sharing
+    #pragma omp for
     for (int c = 0; c < clust->nclust; c++) {
       if (clust->counts[c] > 0) {
         for (int d = 0; d < clust->dim; d++) {
@@ -75,20 +87,26 @@ int main(int argc, char **argv) {
       }
     }
 
+
     // DETERMINE NEW CLUSTER ASSIGNMENTS FOR EACH DATA
     for (int c = 0; c < clust->nclust; c++) {
       clust->counts[c] = 0;
     }
-
+    // initializing locks for when we update counts 
+    omp_lock_t *counts_locks = (omp_lock_t *)malloc(clust->nclust * sizeof(omp_lock_t)); // we need as many locks as cluster so we can update each cluster count
+    for (int i = 0; i < clust->nclust; i++) {
+        omp_init_lock(&counts_locks[i]);
+    }
     nchanges = 0;
+		int local_nchanges = 0;
+		#pragma omp parallel for reduction(+:local_nchanges)
     for (int i = 0; i < data->ndata; i++) {
       int best_clust = INT_MIN;
       float best_distsq = INFINITY;
       for (int c = 0; c < clust->nclust; c++) {
         float distsq = 0.0;
         for (int d = 0; d < clust->dim; d++) {
-          float diff = data->features[i * clust->dim + d] -
-                       clust->features[c * clust->dim + d];
+          float diff = data->features[i * clust->dim + d] - clust->features[c * clust->dim + d];
           distsq += diff * diff;
         }
         if (distsq < best_distsq) {
@@ -96,14 +114,21 @@ int main(int argc, char **argv) {
           best_distsq = distsq;
         }
       }
-
+    	omp_set_lock(&counts_locks[best_clust]);
       clust->counts[best_clust] += 1;
+			omp_unset_lock(&counts_locks[best_clust]);
+
       if (best_clust != data->assigns[i]) {
-        nchanges += 1;
+        local_nchanges += 1;
         data->assigns[i] = best_clust;
       }
     }
-
+		nchanges = local_nchanges;
+		for (int i = 0; i < clust->nclust; i++) {
+			omp_destroy_lock(&counts_locks[i]);
+		}
+		free(counts_locks);
+		
     printf("%3d: %5d |", curiter, nchanges);
     for (int c = 0; c < nclust; c++) {
       printf(" %4d", clust->counts[c]);
