@@ -242,12 +242,12 @@ int main(int argc, char **argv) {
   while ((nchanges > 0) && (curiter <= MAXITER)) {
     // DETERMINE NEW CLUSTER CENTERS
     // reset cluster centers to 0.0
-    for (int c = 0; c < clust->nclust; c++) {
-      for (int d = 0; d < clust->dim; d++) {
-        clust->features[c * clust->dim + d] = 0.0;
-      }
-    }
-
+    // for (int c = 0; c < clust->nclust; c++) {
+    //   for (int d = 0; d < clust->dim; d++) {
+    //     clust->features[c * clust->dim + d] = 0.0;
+    //   }
+    // }
+		memset(clust->features, 0.0, sizeof(float) * clust->nclust * clust->dim);
     // cluster locks 
     omp_lock_t *cluster_locks = (omp_lock_t *) malloc(clust->nclust * sizeof(omp_lock_t));
     // Initialize the locks
@@ -256,7 +256,7 @@ int main(int argc, char **argv) {
     }
     omp_lock_t lock;
     omp_init_lock(&lock);
-
+ 
     // sum up data in each cluster   
     #pragma omp parallel
     {
@@ -269,26 +269,22 @@ int main(int argc, char **argv) {
           int c = data->assigns[i];
 
           for (int d = 0; d < clust->dim; d++) {
-            omp_set_lock(&cluster_locks[c]);
             local_data[c * clust->dim + d] += data->features[i * clust->dim + d];
-            omp_unset_lock(&cluster_locks[c]);
           }  
         }
 
         // combine the results together
-        #pragma omp parallel for
-        for (int i = 0; i < clust->nclust; i++) {
-          for (int d = 0; d < clust->dim; d++) {
-              omp_set_lock(&lock);
+        #pragma omp critical
+        {
+          for (int i = 0; i < clust->nclust; i++) {
+            for (int d = 0; d < clust->dim; d++) {
               clust->features[i * clust->dim + d] += local_data[i * clust->dim + d];
-              omp_unset_lock(&lock);
+            }
           }
         }
 
         free(local_data);
-
     }
-
     // divide by ndatas of data to get mean of cluster center
     #pragma omp parallel for
     for (int c = 0; c < clust->nclust; c++) {
