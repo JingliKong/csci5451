@@ -10,8 +10,8 @@
 GROUP MEMBERS
 -------------
 
-  - Member 1: <NAME> <X500>
-  - Member 2: <NAME> <X500>
+  - Member 1: Angie Chen chen7313
+  - Member 2: Jingli Kong kong0147
 
   Up to 2 people may collaborate on this assignment. Write names/x.500
   above. If working alone, leave off Member 2.
@@ -38,14 +38,14 @@ kmeans_omp Timing Table
                                        Data File                     
    Procs  digits_all_5e3.txt  digits_all_1e4.txt  digits_all_3e4.txt 
   -------------------------------------------------------------------
-       1               00.00               00.00               00.00 
-       2               00.00               00.00               00.00 
-       4               00.00               00.00               00.00 
-       8               00.00               00.00               00.00 
-      10               00.00               00.00               00.00 
-      13               00.00               00.00               00.00 
-      16               00.00               00.00               00.00 
-      32               00.00               00.00               00.00 
+       1                4.61               23.29               96.51 
+       2                4.90               15.91               40.00 
+       4                2.95               15.95               49.24 
+       8                2.40               10.39               28.09 
+      10                2.12                8.09               15.19 
+      13                0.87                2.98                9.21 
+      16                0.96                2.95                7.92 
+      32               3.64                 2.22               6.89 
   -------------------------------------------------------------------
 
 
@@ -54,11 +54,39 @@ kmeans_omp Discussion Questions
 
   Analyze your table of results and answer the following questions.
   1. Did using more processors result in speedups?
+
+	Yes, using more processors resulted in more speedup. Only until we reach 32 
+  processors does the processor not speedup or that the speedup is minimal. 
+  We assume this is because the overhead associated with that many processors 
+  is less than the speedup, until we get to around that point. 
+
+
   2. Describe any trends or anomalies you see in the timings and
      speculate on their causes - e.g. was there are a steady increase in
      runtimes, steady decrease, or jagged changes in timing?
+
+There is almost a logarithmic speedup in timings which is more exaggerated 
+in the larger files. Though as we get past 8 procs we lose a lot of 
+efficiency so and only get around a linear amount of speedup.
+
+
   3. Try to explain how number of processors and problem size seem to
      affect runtimes/speedup in the problem.
+
+Having a larger problem size appears to increase the runtime. For example, 
+digits_all_3e4.txt seems to be the largest file and takes considerably 
+longer than the other two files. 
+
+Generally, having more processors appear to cause a speedup on a logarithmic scale. 
+So, having more processors will cause the runtime to decrease, but the rate 
+of which the runtime decreases is also decreasing.
+
+Additionally, having a larger file and more processors seems to create a 
+speedup that is more prominently logarithmic. In other words, in a larger 
+data set, adding a processor appears to speedup the problem by a considerable 
+amount. Take for example 1 and 2 procs for files digits_all_1e4 and digits_all_3e4. 
+Using 2 processors for digits_all_1e4 causes a speedup of roughly 146%, 
+while the speedup for digits_all_3e4 is roughly 241%. 
 
 
 Problem 2: kmeans_cuda
@@ -79,8 +107,8 @@ kmeans_cuda Timing Table
                                             Data File                     
    Procs       digits_all_5e3.txt  digits_all_1e4.txt  digits_all_3e4.txt 
   ------------------------------------------------------------------------
-   CPU Serial               00.00               00.00               00.00 
-   GPU                      00.00               00.00               00.00 
+   CPU Serial               7.02               44.91               00.00 
+   GPU                      1.32                2.22                4.82 
   ------------------------------------------------------------------------
 
 
@@ -89,7 +117,33 @@ kmeans_cuda Discussion Questions
 
   Analyze your table of results and answer the following questions.
   1. Did using the GPU result in speedups?
+
+Yes, using the GPU resulting in considerable speedup, compared to the serial algorithm.
+
+
   2. Describe your general approach on how you used GPU threads/blocks
      to parallelize the algorithm.
      - How did you subdivide the Cluster Center Calculation Phase?
      - How did you subdivide the Data Assignment Phase?
+
+The cluster center calculation was parallelized by using threads to calculate 
+the summing and division phases. A memset was used in every loop to zero out 
+the GPU arrays. The summing was parallelized with one thread for every data point; 
+the data point’s assignment was checked, then it was added to the corresponding 
+cluster with an atomic operation. Blocked were used to handle the cases where 
+they may be too many threads. Each block had 512 threads, and just enough blocks 
+are created each time to handle all of the data. After the cluster centers were 
+summed, then had to be divided. A thread was used for every cluster, so one block 
+containing all of the cluster threads. Since each thread would modify a different 
+part of memory, no atomic operations was needed.
+
+The data assignment phase was parallelized by having one thread per data. 
+This used a similar block/division format to the first one; 512 threads per block, 
+with as many blocks as needed (determined from dividing ndata by 512, then finding 
+the ceiling). First, the counts was reset to 0 using a few of the threads, and 
+the threads were synced up. Then, each thread got a data point, calculated the distances 
+with the dimension, then and found the closest cluster center. The cluster couts was 
+increased with an atomic operation based on the cluster the datapoint was assigned to, 
+and the number of changes was incremented with another atomic operations. 
+The threads were then synchronized.
+
