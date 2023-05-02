@@ -3,19 +3,6 @@
 #include <cuda_runtime.h>
 #include "kmeans_util.h"
 
-__global__ void zero_centers(int dim, int nclust, float* clust_features) {
-  int i = threadIdx.x; // one thread for every cluster
-
-  if (i < nclust) {
-    for (int d = 0; d < dim; d++) {
-      clust_features[i*dim + d] = 0.0;
-    }
-    
-    __syncthreads();
-  }
-  
-}
-
 __global__ void cluster_centers(int dim, int ndata, float* clust_features, 
                                 float* data_features, int* data_assigns) {
   int dp = (blockDim.x * blockIdx.x) + threadIdx.x; // one thread for every data point
@@ -151,9 +138,7 @@ int main(int argc, char **argv) {
   int* data_assigns;
 
   cudaMalloc((void**) &clust_features, clust->dim * clust->nclust * sizeof(float));
-//   checkCUDAError("Error allocating clust_features");
-//   cudaMemset(clust_features, 0, clust->dim * clust->nclust * sizeof(float));
-//   checkCUDAError("Error memset clust_features");
+  checkCUDAError("Error allocating clust_features");
 
   cudaMalloc((void**) &clust_counts, clust->nclust * sizeof(int));
   checkCUDAError("Error allocating clust_counts");
@@ -161,14 +146,10 @@ int main(int argc, char **argv) {
   checkCUDAError("Error memset clust_counts");
 
   cudaMalloc((void**) &data_features, data->ndata * data->dim * sizeof(float));
-//   checkCUDAError("Error allocating data_features");
-//   cudaMemset(data_features, 0, data->ndata * data->dim * sizeof(float));
-//   checkCUDAError("Error memset data_features");
+  checkCUDAError("Error allocating data_features");
 
   cudaMalloc((void**) &data_assigns, data->ndata * sizeof(int));
-//   checkCUDAError("Error allocating data_assigns");
-//   cudaMemset(data_assigns, 0, data->ndata * sizeof(int));
-//   checkCUDAError("Error memset data_assigns");
+  checkCUDAError("Error allocating data_assigns");
 
 
   int* nchanges_gpu;
@@ -189,37 +170,31 @@ int main(int argc, char **argv) {
   cudaMemcpy(clust_counts, clust->counts, clust->nclust * sizeof(int), cudaMemcpyHostToDevice);
   checkCUDAError("Error memcpy host clust_counts");
 
+  // determine block size 
   int nblocks = ceil(((double)data->ndata)/512);
+
   while ((nchanges > 0) && (curiter <= MAXITER)) {
 
     // cluster sums
-    zero_centers<<<1, clust->dim>>>(clust->dim, clust->nclust, clust_features); // TODO: more than 1 block??
-    checkCUDAError("zero_centers");
+    cudaMemset(clust_features, 0, clust->dim * clust->nclust * sizeof(float));
+    checkCUDAError("Error memset clust_features");
 
-    // cluster_centers<<<1, data->ndata>>>(data->dim, data->ndata, clust_features, data_features, data_assigns);
     cluster_centers<<<nblocks, 512>>>(data->dim, data->ndata, clust_features, data_features, data_assigns);
     checkCUDAError("cluster_centers");
 
     divide_centers<<<1, clust->dim>>>(data->dim, clust->nclust, clust_features, clust_counts);
     checkCUDAError("divide_centers");
 
-    cudaMemcpy(clust->counts, clust_counts, clust->nclust * sizeof(int), cudaMemcpyDeviceToHost);
-  
-
     // cluster_assignment
     cudaMemset(nchanges_gpu, 0, sizeof(int));
     checkCUDAError("nchanges memset");
-
-    // cluster_assignment<<<1, data->ndata>>>(clust->nclust, data->ndata, data->dim, nchanges_gpu,
-    //                                     clust_counts, clust_features, data_assigns, data_features);
     cluster_assignment<<<nblocks, 512>>>(clust->nclust, data->ndata, data->dim, nchanges_gpu,
                                         clust_counts, clust_features, data_assigns, data_features);
     checkCUDAError("cluster_assignment");
 
-
+    // copy the changes over to CPU
     cudaMemcpy(clust->counts, clust_counts, clust->nclust * sizeof(int), cudaMemcpyDeviceToHost);
     checkCUDAError("Error memcpy clust_counts");
-
     cudaMemcpy(&nchanges, nchanges_gpu, sizeof(int), cudaMemcpyDeviceToHost); //QUESTION: do i need to put nchanges as a separate var?
     checkCUDAError("Error memcpy nchanges_gpu");
     
