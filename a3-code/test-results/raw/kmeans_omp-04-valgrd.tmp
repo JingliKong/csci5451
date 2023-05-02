@@ -1,0 +1,6 @@
+==742564== Memcheck, a memory error detector
+==742564== Copyright (C) 2002-2017, and GNU GPL'd, by Julian Seward et al.
+==742564== Using Valgrind-3.15.0 and LibVEX; rerun with -h for copyright info
+==742564== Command: ./kmeans_omp mnist-data/digits_all_1e2.txt 10 test-results/outdir_omp4 500
+==742564== Parent PID: 742563
+==742564== 

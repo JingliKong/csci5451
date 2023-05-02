@@ -1,60 +1,104 @@
-#include "kmeans_util.h"
-
+#include <stdio.h>
 #include <cuda.h>
 #include <cuda_runtime.h>
+#include "kmeans_util.h"
 
-void checkCudaError(cudaError_t err, int line_num, char *comment) {
-  if (err != cudaSuccess) {
-    printf("CUDA Error: %s at %s:%d\n", cudaGetErrorString(err), comment, line_num);
-    exit(err);
+__global__ void zero_centers(int dim, int nclust, float* clust_features) {
+  int i = threadIdx.x; // one thread for every cluster
+
+  if (i < nclust) {
+    for (int d = 0; d < dim; d++) {
+      clust_features[i*dim + d] = 0.0;
+    }
+    
+    __syncthreads();
+  }
+  
+}
+
+__global__ void cluster_centers(int dim, int ndata, float* clust_features, 
+                                float* data_features, int* data_assigns) {
+  int dp = threadIdx.x; // one thread for every data point
+  // convert this later to dimensions instead of data points
+
+  if (dp < ndata) {
+    // sum up data in each cluster
+    int c = data_assigns[dp];
+    for (int d = 0; d < dim; d++) {
+      // clust_features[c * dim + d] += data_features[dp * dim + d];
+      atomicAdd(&clust_features[c*dim + d], data_features[dp * dim + d]);
+    }
+
+    __syncthreads();
   }
 }
-// ./kmeans_cuda mnist-data/digits_all_1e2.txt 10 test-results/outdir_cuda01 500
-__global__ void initAssignments(int *assigns, int ndata, int nclust) {
-    // gives us the actual index of the feature same as in serial version
-    int idx = blockIdx.x * blockDim.x + threadIdx.x; 
-    if (idx < ndata) { // making sure we stay inbounds
-		assigns[idx] = idx % nclust;
+
+__global__ void divide_centers(int dim, int nclust, float* clust_features, int* clust_counts) {
+  int i = threadIdx.x; // one thread for every cluster
+
+  if (i < nclust) {
+    // divide by ndatas of data to get mean of cluster center
+    if (clust_counts[i] > 0) {
+      for (int d = 0; d < dim; d++) {
+        clust_features[i * dim + d] = clust_features[i * dim + d] / clust_counts[i];
+      }
+    }
+
+    __syncthreads();
+
+  }
+  
+}
+
+__global__ void cluster_assignment(int nclust, int ndata, int dim, int* nchanges_ptr, 
+                                    int* clust_counts, float* clust_features, 
+                                    int* data_assigns, float* data_features) {
+  int dp = threadIdx.x; // one thread for every data point
+
+  // DETERMINE NEW CLUSTER ASSIGNMENTS FOR EACH DATA
+  if (dp < nclust) {
+    clust_counts[dp] = 0;
+  }
+  __syncthreads();
+
+  if (dp < ndata) {
+    // calculate the best cluster for the data point
+    int best_clust = INT_MIN;
+    float best_distsq = INFINITY;
+
+    for (int c = 0; c < nclust; c++) {
+      float distsq = 0.0;
+      for (int d = 0; d < dim; d++) {
+        float diff = data_features[dp * dim + d] - clust_features[c * dim + d];
+        distsq += diff * diff;
+      }
+      if (distsq < best_distsq) {
+        best_clust = c;
+        best_distsq = distsq;
+      }
+    }
+    atomicAdd(&clust_counts[best_clust], 1);
+    // clust_counts[best_clust] += 1;
+
+    if (best_clust != data_assigns[dp]) {
+      atomicAdd(nchanges_ptr, 1);
+      data_assigns[dp] = best_clust;
+    }
+
+    __syncthreads();
+  }
+
+}
+
+void checkCUDAError(const char *msg)
+{
+    cudaError_t err = cudaGetLastError();
+    if( cudaSuccess != err)
+    {
+        fprintf(stderr, "CUDA Error: %s: %s.\n", msg, cudaGetErrorString(err) );
+        exit(EXIT_FAILURE); 
     }
 }
-
-// for (int i = 0; i < data->ndata; i++) { // instead of doing this loop we create nclust blocks with ndata per block?
-//     int c = data->assigns[i]; // need to copy this memory over to device 
-//     for (int d = 0; d < clust->dim; d++) { // this is fixed an needs to be passed in 
-//     clust->features[c * clust->dim + d] += // instead of adding to clust->features we need to allocate some shared memory for the threads to work on 
-//         data->features[i * clust->dim + d]; // features is passed in and we use the index and stuff of the thread to know which elements to add 
-//     }
-// }
-__global__ void updateCentroids (int ndata, int num_clusters, int clust_dim, int *assigns, float *data_features, float* clust_features) 
-{
-
-	// blockDim.x is the # of features because I have the # features be how many threads I spin up per cluster and I have # cluster blocks. 
-
-	// Allocate shared memory for storing sums
-	extern __shared__ float shared_data[];
-
-	// Initialize shared memory to zero
-	// memset(shared_data, 0, sizeof(float) * num_clusters * clust_dim); // we need to be able to add to any cluster centroid
-
-	int c = assigns[threadIdx.x];
-	if (c == blockIdx.x) { // if this thread's features belong to this cluster
-		for (int d = 0; d < clust_dim; d++) {
-				atomicAdd(&shared_data[d], data_features[threadIdx.x * clust_dim + d]);
-		}
-	} 
-
-	__syncthreads();
-
-	if (threadIdx.x == 0) // only one thread needs to edit global memory
-	{   
-		// Add up shared memory for each cluster
-		for (int i = 0; i < clust_dim; i++) {
-			clust_features[blockIdx.x * clust_dim + i], shared_data[i];
-		}
-	}
-}
-
-
 
 int main(int argc, char **argv) {
   if (argc < 3) {
@@ -62,9 +106,8 @@ int main(int argc, char **argv) {
   }
   char *datafile = argv[1];
   int nclust = atoi(argv[2]);
-  char *savedir = (char *)malloc(
-      strlen(argv[3]) +
-      1);  // Allocating enough space for the dir len + 1 for null terminator?
+  // Allocating enough space for the dir len + 1 for null terminator?
+  char *savedir = (char *) malloc( strlen(argv[3]) + 1);  
   int MAXITER = 100;
 
   if (argc > 3) {
@@ -82,33 +125,16 @@ int main(int argc, char **argv) {
   KMClust *clust = kmclust_new(nclust, data->dim);
   printf("ndata: %d\n", data->ndata);
   printf("dim: %d\n\n", data->dim);
-  
-	
-	// To parallelize the assignments the only memory we need to copy to the device is the assigns array
-	int blockSize = 256; // 256 threads per block 
-	int gridSize = (data->ndata / blockSize + (data->ndata % blockSize));
-	int *d_assigns; 
-	// allocating memory on device  
-	cudaError_t err0 = cudaMalloc((void **) &d_assigns, sizeof(int) * data->ndata);
-	checkCudaError(err0, 96, "d_assigns"); 
-	initAssignments <<<gridSize, blockSize>>> (d_assigns, data->ndata, clust->nclust); 
-	// checking if initAssignments failed to launch
-	err0 = cudaGetLastError();
-	checkCudaError(err0, 98, "initAssignments");
-	// sync and copy memory back to CPU
-	err0 = cudaDeviceSynchronize(); 
-	checkCudaError(err0, 102, "sync");
-	err0 = cudaMemcpy(data->assigns, d_assigns, sizeof(int) * data->ndata, cudaMemcpyDeviceToHost); 
-	checkCudaError(err0, 104, "d_assigns");
-	// freeing d_assigns
-	err0 = cudaFree(d_assigns);
-	checkCudaError(err0, 107, "cuda free d_assigns");
-	// TODO: This should be done locally per thread probably
+  for (int i = 0; i < data->ndata; i++) {
+    int c = i % clust->nclust;
+    data->assigns[i] = c;  // give every feature array a cluster
+  }
+
   for (int c = 0; c < clust->nclust; c++) {
     float icount = data->ndata / clust->nclust;
     float extra = (c < (data->ndata % clust->nclust)) ? 1 : 0;
-    // counts is saying how may features are per cluster
-    clust->counts[c] = icount + extra;  
+    clust->counts[c] =
+        icount + extra;  // counts is saying how may features are per cluster
   }
 
   // Main Algorithm
@@ -117,117 +143,112 @@ int main(int argc, char **argv) {
   printf("==CLUSTERING: MAXITER %d==\n", MAXITER);
   printf("ITER NCHANGE CLUST_COUNTS\n");
 
+  // allocating shared memory
+  float* clust_features;
+  int* clust_counts;
+  float* data_features;
+  int* data_assigns;
+
+  cudaMalloc((void**) &clust_features, clust->dim * clust->nclust * sizeof(float));
+//   checkCUDAError("Error allocating clust_features");
+//   cudaMemset(clust_features, 0, clust->dim * clust->nclust * sizeof(float));
+//   checkCUDAError("Error memset clust_features");
+
+  cudaMalloc((void**) &clust_counts, clust->nclust * sizeof(int));
+  checkCUDAError("Error allocating clust_counts");
+  cudaMemset(clust_counts, 0, clust->nclust * sizeof(int));
+  checkCUDAError("Error memset clust_counts");
+
+  cudaMalloc((void**) &data_features, data->ndata * data->dim * sizeof(float));
+//   checkCUDAError("Error allocating data_features");
+//   cudaMemset(data_features, 0, data->ndata * data->dim * sizeof(float));
+//   checkCUDAError("Error memset data_features");
+
+  cudaMalloc((void**) &data_assigns, data->ndata * sizeof(int));
+//   checkCUDAError("Error allocating data_assigns");
+//   cudaMemset(data_assigns, 0, data->ndata * sizeof(int));
+//   checkCUDAError("Error memset data_assigns");
+
+
+  int* nchanges_gpu;
+  cudaMalloc((void**) &nchanges_gpu, sizeof(int));
+  checkCUDAError("Error allocating nchanges_gpu");
+  cudaMemset(nchanges_gpu, 0, sizeof(int));
+  checkCUDAError("nchanges memset");
+
+  // copy over the initialization for assigns and counts
+  cudaMemcpy(data_assigns, data->assigns, data->ndata * sizeof(int), 
+            cudaMemcpyHostToDevice);
+  checkCUDAError("Error memcpy host data_assigns");
+
+  cudaMemcpy(data_features, data->features, data->ndata * data->dim * sizeof(float), 
+            cudaMemcpyHostToDevice);
+  checkCUDAError("Error memcpy host data_assigns");
+
+  cudaMemcpy(clust_counts, clust->counts, clust->nclust * sizeof(int), cudaMemcpyHostToDevice);
+  checkCUDAError("Error memcpy host clust_counts");
+
+
   while ((nchanges > 0) && (curiter <= MAXITER)) {
-    // DETERMINE NEW CLUSTER CENTERS
-    // reset cluster centers to 0.0
 
-    for (int c = 0; c < clust->nclust; c++) {
-      for (int d = 0; d < clust->dim; d++) {
-        clust->features[c * clust->dim + d] = 0.0;
-      }
-    }
-		// so we can get a block for each cluster which has as many threads as features we need to add 
-		dim3 blockDim(data->dim); // threads per blocks 
-		dim3 numBlocks(clust->nclust); // number of blocks per grid
+    // cluster sums
+    zero_centers<<<1, clust->dim>>>(clust->dim, clust->nclust, clust_features); // TODO: more than 1 block??
+    checkCUDAError("zero_centers");
 
-		// allocating variables used for parallelization
-		int *d_feature_assigns = NULL;
-		float *d_data_features = NULL; 
-		float *d_clust_features = NULL;
-		printf("data->ndata: %d \n", data->ndata); // DEBUG
-    // Allocate memory on the device
-    cudaError_t err = cudaMalloc((void**)&d_feature_assigns, data->ndata * sizeof(int));
-		checkCudaError(err, 141, "d_feature_assigns");
-	
-    err = cudaMalloc((void**)&d_data_features, data->ndata * data->dim * sizeof(float));
-		checkCudaError(err, 144, "d_data_features");
-    err = cudaMalloc((void**)&d_clust_features, clust->dim * sizeof(float));		
-		checkCudaError(err, 146, "d_clust_features");
-		
-		for (int i = 0; i < 25; i++) { // DEBUG
-			printf("%d ", data->assigns[i]);
-		}
-		printf("\n"); // DEBUG
+    cluster_centers<<<1, data->ndata>>>(data->dim, data->ndata, clust_features, data_features, data_assigns);
+    checkCUDAError("cluster_centers");
 
-		// Copy data from host to device
-    cudaError_t d_feature_assigns_err = cudaMemcpy(d_feature_assigns, data->assigns, data->ndata * sizeof(int), cudaMemcpyHostToDevice);
-		checkCudaError (d_feature_assigns_err, 156, "d_feature_assigns");
+    divide_centers<<<1, clust->dim>>>(data->dim, clust->nclust, clust_features, clust_counts);
+    checkCUDAError("divide_centers");
 
-    cudaError_t d_data_features_err = cudaMemcpy(d_data_features, data->features, data->ndata * data->dim * sizeof(float), cudaMemcpyHostToDevice);
-		checkCudaError (d_data_features_err, 160, "d_data_features");
+    cudaMemcpy(clust->counts, clust_counts, clust->nclust * sizeof(int), cudaMemcpyDeviceToHost);
+    // cudaMemcpy(clust->features, clust_features, clust->nclust * data->dim * sizeof(float), cudaMemcpyDeviceToHost);
+    // checkCUDAError("Error memcpy");
+    // printf("%3d: %5d |", curiter, nchanges);
+    // for (int c = 0; c < nclust; c++) {
+    //   printf(" %4d", clust->counts[c]);
+    // }
+    // printf("\n");
 
-    cudaError_t d_clust_features_err = cudaMemcpy(d_clust_features, clust->features, clust->dim * sizeof(float), cudaMemcpyHostToDevice);
-		checkCudaError (d_clust_features_err, 163, "d_clust_features");
-		// updateCentroids<<<numBlocks, blockDim, clust->dim * sizeof(float)>>> (data->ndata, clust->nclust, data->dim, d_feature_assigns, d_data_features, d_clust_features); 
-		int shared_mem_size = clust->nclust * clust->dim * sizeof(float); // this is how much shared memory should be in the kernel for each block
-		updateCentroids<<<numBlocks, blockDim, shared_mem_size>>> (data->ndata, clust->nclust, data->dim, d_feature_assigns, d_data_features, d_clust_features); 
-		err = cudaGetLastError();
-		checkCudaError (err, 166, "updateCentroids");
-		// Copy the result from device to host
-		err = cudaDeviceSynchronize(); 
-		checkCudaError (err, 170, "sync");
-    err = cudaMemcpy(clust->features, d_clust_features, clust->dim * sizeof(float), cudaMemcpyDeviceToHost);
-		checkCudaError (err, 172, "clust->features device to host");
-		cudaFree(d_feature_assigns);
-		cudaFree(d_data_features);
-		cudaFree(d_clust_features);
-		
-		
-		// for (int i = 0; i < clust->dim; i++) {
-		// 		printf("%f ", clust->features[i]);
-		// }
-		// printf("\n");
+    // cluster_assignment
+    cudaMemset(nchanges_gpu, 0, sizeof(int));
+    checkCUDAError("nchanges memset");
 
-		// divide by ndatas of data to get mean of cluster center
-    for (int c = 0; c < clust->nclust; c++) {
-      if (clust->counts[c] > 0) {
-        for (int d = 0; d < clust->dim; d++) {
-          clust->features[c * clust->dim + d] =
-              clust->features[c * clust->dim + d] / clust->counts[c];
-        }
-      }
-    }
-	
+    cluster_assignment<<<1, data->ndata>>>(clust->nclust, data->ndata, data->dim, nchanges_gpu,
+                                        clust_counts, clust_features, data_assigns, data_features);
+    checkCUDAError("cluster_assignment");
 
-    // DETERMINE NEW CLUSTER ASSIGNMENTS FOR EACH DATA
-    for (int c = 0; c < clust->nclust; c++) {
-      clust->counts[c] = 0;
-    }
 
-    nchanges = 0;
-    for (int i = 0; i < data->ndata; i++) {
-      int best_clust = INT_MIN;
-      float best_distsq = INFINITY;
-      for (int c = 0; c < clust->nclust; c++) {
-        float distsq = 0.0;
-        for (int d = 0; d < clust->dim; d++) {
-          float diff = data->features[i * clust->dim + d] -
-                       clust->features[c * clust->dim + d];
-          distsq += diff * diff;
-        }
-        if (distsq < best_distsq) {
-          best_clust = c;
-          best_distsq = distsq;;
-        }
-      }
+    cudaMemcpy(clust->counts, clust_counts, clust->nclust * sizeof(int), cudaMemcpyDeviceToHost);
+    checkCUDAError("Error memcpy clust_counts");
 
-      clust->counts[best_clust] += 1;
-      if (best_clust != data->assigns[i]) {
-        nchanges += 1;
-        data->assigns[i] = best_clust;
-      }
-
-    }
-
+    cudaMemcpy(&nchanges, nchanges_gpu, sizeof(int), cudaMemcpyDeviceToHost); //QUESTION: do i need to put nchanges as a separate var?
+    checkCUDAError("Error memcpy nchanges_gpu");
+    
     printf("%3d: %5d |", curiter, nchanges);
     for (int c = 0; c < nclust; c++) {
       printf(" %4d", clust->counts[c]);
     }
     printf("\n");
     curiter += 1;
-  }
- 
-  // Loop has converged
+
+  } // end while loop
+
+  // copy over the rest of the arrays
+  cudaMemcpy(clust->features, clust_features, clust->dim * clust->nclust * sizeof(float), 
+            cudaMemcpyDeviceToHost); 
+  checkCUDAError("Error memcpy clust_features");
+
+            
+  cudaMemcpy(data->features, data_features, data->ndata * data->dim * sizeof(float), 
+            cudaMemcpyDeviceToHost);
+  checkCUDAError("Error memcpy data_features");
+  
+  cudaMemcpy(data->assigns, data_assigns, data->ndata * sizeof(int), 
+            cudaMemcpyDeviceToHost);
+  checkCUDAError("Error memcpy data_assigns");
+
+
   if (curiter > MAXITER) {
     printf("WARNING: maximum iteration %d exceeded, may not have conveged",
            MAXITER);
@@ -264,7 +285,6 @@ int main(int argc, char **argv) {
   int tot = 0;
 
   // each row of confusion matrix
-  // printf("nlabels: %d\n", data->nlabels);
   for (int i = 0; i < data->nlabels; i++) {
     printf("%2d:", i);
     tot = 0;
@@ -285,9 +305,6 @@ int main(int argc, char **argv) {
   printf(" %4d\n\n", tot);
 
   // LABEL FILE OUTPUT
-  // char* outfile;
-  // strcpy(outfile, savedir);
-  // strcat(outfile, "/labels.txt");
 
   char *outfile =
       (char *) malloc(strlen(argv[3]) + strlen("/labels.txt") +
@@ -306,6 +323,12 @@ int main(int argc, char **argv) {
 
   // Freeing allocated memory
 
+  // free CUDA allocated
+  cudaFree(data_assigns);
+  cudaFree(data_features);
+  cudaFree(clust_counts);
+  cudaFree(clust_features);
+
   // freeing KMDATA struct
   free(data->features);
   free(data->assigns);
@@ -320,13 +343,156 @@ int main(int argc, char **argv) {
   // Mischalenous frees
   free(savedir);
   free(outfile);
-
-	// Freeing cuda stuff 
-	
-
-	
-	
   return 0;
 }
 
 
+int filestats(char *filename, ssize_t *tot_tokens, ssize_t *tot_lines){
+  FILE *fin = fopen(filename,"r");
+  if(fin == NULL){
+    printf("Failed to open file '%s'\n",filename);
+    return -1;
+  }
+
+  ssize_t ntokens=0, nlines=0, column=0;
+  int intoken=0, token;
+  while((token = fgetc(fin)) != EOF){
+    if(token == '\n'){          // reached end of line
+      column = 0;
+      nlines++;
+    }
+    else{
+      column++;
+    }
+    if(isspace(token) && intoken==1){ // token to whitespace
+      intoken = 0;
+    }
+    else if(!isspace(token) && intoken==0){ // whitespace to token
+      intoken = 1;
+      ntokens++;
+    }
+  }
+  if(column != 0){              // didn't end with a newline
+    nlines++;                   // add a line on to the count
+  }
+  *tot_tokens = ntokens;
+  *tot_lines = nlines;
+  fclose(fin);
+  return 0;
+}
+
+int intMax (int *arr, int len) {
+    int current_min = INT_MIN; 
+    for (int i = 0; i < len; i++) {
+        if (arr[i] > current_min) {
+            current_min = arr[i]; 
+        }
+    }
+    return current_min; 
+}
+
+
+KMData* kmdata_load(char* datafile) {
+    // zeroing out all data 
+    KMData* data = (KMData*) calloc(1, sizeof(KMData)); 
+
+    FILE* fin = fopen(datafile, "r");
+    if (fin == NULL) {
+        printf("Error opening file\n");
+        cudaFree(data); // free(data);
+        return NULL;
+    }
+    ssize_t tot_tokens = 0; //number of tokens in datafile 
+    ssize_t tot_lines = 0;  // number of lines in datafile
+
+    // Getting file data we need to allocate correct amount of space 
+    int fileStats = filestats(datafile, &tot_tokens, &tot_lines); 
+ 
+    // allocating space for the number of labels in the dataset 
+    data->labels = (int *) calloc(tot_lines, sizeof(int)); 
+
+    //length of features array 
+    int featuresLength = tot_tokens/tot_lines - 2; 
+    // allocating space for all the features arrays 
+    data->features = (float *) malloc(tot_lines * featuresLength * sizeof(float)); // allocating a 2d array for the features 
+
+    int ndata = 0; // keeping track of ndata 
+    int currentIntToken = 0; // used to store the current feature token 
+    char colon[1]; 
+    for (int i = 0; i < tot_lines; i++) {
+        ndata++; 
+        fscanf (fin, "%d %s", &currentIntToken, colon);
+        data->labels[i] = currentIntToken; // appending label to labels array 
+        for (int j = 0; j < featuresLength; j++) {
+            fscanf(fin, "%d", &currentIntToken);   
+            data->features[i * featuresLength + j] = currentIntToken; // appending feature to feature array   
+        } 
+    }
+    fclose(fin);
+    data->ndata = ndata; 
+    data->dim = featuresLength; 
+    data->nlabels = intMax(data->labels, tot_lines) + 1; // note since I increment the labelIdx when I add a new label this should be the length
+    data->assigns = (int *) malloc(sizeof(int) * data->ndata); //allocating assigns array for later 
+    memset(data->assigns, 0, sizeof(int) * data->ndata); //zerioing out assigns for now 
+    
+    return data;
+}
+
+KMClust* kmclust_new(int nclust, int dim) {
+    KMClust* clust = (KMClust*) malloc(sizeof(KMClust)); 
+    memset(clust, 0, sizeof(KMClust)); // zeroing out all data 
+    clust->nclust = nclust;
+    clust->dim = dim;
+
+    clust->features = (float *) malloc(sizeof(float) * nclust * dim); 
+    clust->counts = (int *) malloc(sizeof(int) * nclust); 
+
+    for (int c = 0; c < nclust; c++) {
+        for (int d = 0; d < dim; d++) {
+            clust->features[c * dim + d] = 0.0; 
+        }
+        clust->counts[c] = 0.0; 
+    }
+    return clust;
+}
+void save_pgm_files(KMClust* clust, char* savedir) {
+    int nclust = clust->nclust; 
+    int dim = clust->dim; 
+    int dim_root = (int) sqrt(dim); 
+    if (clust->dim % dim_root == 0) {
+        printf("Saving cluster centers to %s/cent_0000.pgm ...\n", savedir); 
+        
+        float maxfeat = -INFINITY;  
+
+        for (int i = 0; i < nclust; i++) {
+            for (int j = 0; j < dim; j++) {
+                float element = clust->features[i * dim + j]; 
+                if (element > maxfeat) {
+                    maxfeat = element;  
+                }
+            }
+        }
+        for (int c = 0; c < nclust; c++) {
+            char outfile[1024]; 
+            sprintf(outfile, "%s/cent_%04d.pgm", savedir, c);
+            FILE *pgm = fopen(outfile, "w+"); 
+
+            fprintf(pgm,"P2\n");
+     
+            fprintf(pgm, "%d %d\n", dim_root, dim_root);
+            
+            fprintf(pgm,"%.0f", maxfeat);
+
+            for (int d = 0; d < dim; d++) {
+                if ((d > 0 && d%dim_root) == 0) {
+                    fprintf(pgm, "\n");
+                }
+				fprintf(pgm, "%3.0f ", clust->features[c*dim + d]);  
+            }
+            fprintf(pgm, "\n");
+            fclose(pgm);
+            
+        } 
+
+    }
+}

@@ -77,7 +77,16 @@ int main(int argc, char **argv) {
       }
     }
 
-    // helper_print(clust->features, clust->nclust, clust->dim); //DEBUG
+    // cudaMemcpy(clust->counts, clust_counts, clust->nclust * sizeof(int), cudaMemcpyDeviceToHost);
+    // checkCUDAError("Error memcpy clust_counts");
+    printf("%3d: %5d |", curiter, nchanges);
+    for (int c = 0; c < nclust; c++) {
+      printf(" %4d", clust->counts[c]);
+      // printf(" %2.2f", clust->features[c]);
+
+    }
+    printf("\n");
+
 
     // DETERMINE NEW CLUSTER ASSIGNMENTS FOR EACH DATA
     for (int c = 0; c < clust->nclust; c++) {
@@ -98,8 +107,6 @@ int main(int argc, char **argv) {
         if (distsq < best_distsq) {
           best_clust = c;
           best_distsq = distsq;
-          // printf("BEST-DEBUG: %f\n", best_distsq);
-          // printf("BEST-DEBUG %d: %f\n", c, best_distsq);
         }
       }
 
@@ -109,22 +116,13 @@ int main(int argc, char **argv) {
         nchanges += 1;
         data->assigns[i] = best_clust;
       }
-      // printf("DEBUG: loc %d, clust: %d\n", data->assigns[i], best_clust);
     }
 
-    //         for (int i = 0; i < data->ndata; i++){
-    //   printf("%d ", clust->counts[i]);
+    // printf("%3d: %5d |", curiter, nchanges);
+    // for (int c = 0; c < nclust; c++) {
+    //   printf(" %4d", clust->counts[c]);
     // }
     // printf("\n");
-
-    // TODO: More here when to stop experiment (All-reduce) here, and need to
-    // know what everyone's nchanges are so we can terminate Print iteration
-    // information at the end of the iter
-    printf("%3d: %5d |", curiter, nchanges);
-    for (int c = 0; c < nclust; c++) {
-      printf(" %4d", clust->counts[c]);
-    }
-    printf("\n");
     curiter += 1;
   }
   // TODO: All-to-one to the root, root does all printing for confusion matrix

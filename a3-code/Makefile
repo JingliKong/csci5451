@@ -58,7 +58,7 @@ clean-tests :
 
 ################################################################################
 # kmeans_serial
-kmeans_serial : kmeans_serial.c kmeans_util.c
+kmeans_serial : kmeans_serial.c
 	$(GCC) -o $@ $^ -lm
 
 test-serial: test-setup kmeans_serial
@@ -68,7 +68,7 @@ test-serial: test-setup kmeans_serial
 # Problem 1 : kmeans_omp
 prob1: kmeans_omp
 
-kmeans_omp : kmeans_omp.c kmeans_util.c
+kmeans_omp : kmeans_omp.c
 	$(OMPCC) -o $@ $^ -lm
 
 test-prob1: test-setup prob1 test_kmeans_omp.org
