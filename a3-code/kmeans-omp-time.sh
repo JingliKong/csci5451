@@ -10,6 +10,7 @@ mkdir -p outdirs   # subdir or all output kmeans output
 # processor counts
 ALLDATA="digits_all_5e3.txt digits_all_1e4.txt digits_all_3e4.txt"
 ALLNP="1 2 4 8 10 13 16 32"
+# ALLNP="1 2"
 
 # # Small sizes for testing
 # ALLDATA="digits_all_3e4.txt"
@@ -22,7 +23,7 @@ for NP in $ALLNP; do
         OUTDIR=outdirs/outdir_${DATA}_${NP}
         export OMP_NUM_THREADS=$NP
         /usr/bin/time -f "runtime: procs $NP data $DATA realtime %e" \
-                     ./kmeans_omp $DATADIR/$DATA $NCLUST $OUTDIR $MAXITERS
+                     ./kmeans_omp $DATADIR/$DATA $NCLUST $OUTDIR $MAXITERS > omp-results.txt
         echo
     done
 done

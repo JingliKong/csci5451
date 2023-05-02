@@ -1,7 +1,10 @@
 a2-code/test-results/
 *.o
+a2-code/outdirs/
+a2-code/outdir/
 a2-code/heat-slurm.sh
 heat_mpi
 heat_serial
 kmeans_serial
 mpi_hello
+*.pgm

@@ -18,7 +18,7 @@ __global__ void zero_centers(int dim, int nclust, float* clust_features) {
 
 __global__ void cluster_centers(int dim, int ndata, float* clust_features, 
                                 float* data_features, int* data_assigns) {
-  int dp = threadIdx.x; // one thread for every data point
+  int dp = (blockDim.x * blockIdx.x) + threadIdx.x; // one thread for every data point
   // convert this later to dimensions instead of data points
 
   if (dp < ndata) {
@@ -53,7 +53,8 @@ __global__ void divide_centers(int dim, int nclust, float* clust_features, int* 
 __global__ void cluster_assignment(int nclust, int ndata, int dim, int* nchanges_ptr, 
                                     int* clust_counts, float* clust_features, 
                                     int* data_assigns, float* data_features) {
-  int dp = threadIdx.x; // one thread for every data point
+  // int dp = threadIdx.x; // one thread for every data point
+  int dp = (blockDim.x * blockIdx.x) + threadIdx.x; // one thread for every data point
 
   // DETERMINE NEW CLUSTER ASSIGNMENTS FOR EACH DATA
   if (dp < nclust) {
@@ -188,33 +189,30 @@ int main(int argc, char **argv) {
   cudaMemcpy(clust_counts, clust->counts, clust->nclust * sizeof(int), cudaMemcpyHostToDevice);
   checkCUDAError("Error memcpy host clust_counts");
 
-
+  int nblocks = ceil(((double)data->ndata)/512);
   while ((nchanges > 0) && (curiter <= MAXITER)) {
 
     // cluster sums
     zero_centers<<<1, clust->dim>>>(clust->dim, clust->nclust, clust_features); // TODO: more than 1 block??
     checkCUDAError("zero_centers");
 
-    cluster_centers<<<1, data->ndata>>>(data->dim, data->ndata, clust_features, data_features, data_assigns);
+    // cluster_centers<<<1, data->ndata>>>(data->dim, data->ndata, clust_features, data_features, data_assigns);
+    cluster_centers<<<nblocks, 512>>>(data->dim, data->ndata, clust_features, data_features, data_assigns);
     checkCUDAError("cluster_centers");
 
     divide_centers<<<1, clust->dim>>>(data->dim, clust->nclust, clust_features, clust_counts);
     checkCUDAError("divide_centers");
 
     cudaMemcpy(clust->counts, clust_counts, clust->nclust * sizeof(int), cudaMemcpyDeviceToHost);
-    // cudaMemcpy(clust->features, clust_features, clust->nclust * data->dim * sizeof(float), cudaMemcpyDeviceToHost);
-    // checkCUDAError("Error memcpy");
-    // printf("%3d: %5d |", curiter, nchanges);
-    // for (int c = 0; c < nclust; c++) {
-    //   printf(" %4d", clust->counts[c]);
-    // }
-    // printf("\n");
+  
 
     // cluster_assignment
     cudaMemset(nchanges_gpu, 0, sizeof(int));
     checkCUDAError("nchanges memset");
 
-    cluster_assignment<<<1, data->ndata>>>(clust->nclust, data->ndata, data->dim, nchanges_gpu,
+    // cluster_assignment<<<1, data->ndata>>>(clust->nclust, data->ndata, data->dim, nchanges_gpu,
+    //                                     clust_counts, clust_features, data_assigns, data_features);
+    cluster_assignment<<<nblocks, 512>>>(clust->nclust, data->ndata, data->dim, nchanges_gpu,
                                         clust_counts, clust_features, data_assigns, data_features);
     checkCUDAError("cluster_assignment");
 

@@ -1,7 +1,0 @@
-==734092== Memcheck, a memory error detector
-==734092== Copyright (C) 2002-2017, and GNU GPL'd, by Julian Seward et al.
-==734092== Using Valgrind-3.15.0 and LibVEX; rerun with -h for copyright info
-==734092== Command: ./kmeans_cuda mnist-data/digits_all_1e2.txt 9 test-results/outdir_cuda04 500
-==734092== Parent PID: 734091
-==734092== 
-==734092== FATAL: can't open suppressions file "test_cuda.supp"
